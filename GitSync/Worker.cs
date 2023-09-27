@@ -53,6 +53,7 @@ public class Worker : BackgroundService
         XTrace.WriteLine("同步：{0}", path);
 
         // 本地所有分支
+        String currentBranch = null;
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
         if (/*branchs == null || branchs.Length == 0 ||*/ branchs.Length == 1 && branchs[0] == "*")
         {
@@ -60,7 +61,21 @@ public class Worker : BackgroundService
             var rs = Execute("git", "branch", path);
             if (rs.IsNullOrEmpty()) return false;
 
-            branchs = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim('*').Trim()).ToArray();
+            var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim()).ToArray();
+            var list = new List<String>();
+            foreach (var item in ss)
+            {
+                if (item.StartsWith("*"))
+                {
+                    currentBranch = item[1..].Trim();
+                    list.Add(item[1..].Trim());
+                }
+                else
+                {
+                    list.Add(item);
+                }
+            }
+            branchs = list.Distinct().ToArray();
         }
         XTrace.WriteLine("分支：{0}", branchs.ToJson());
 
@@ -90,7 +105,7 @@ public class Worker : BackgroundService
         else
         {
             // 记住当前分支，最后要切回来
-            var currentBranch = branchs[0];
+            currentBranch ??= branchs[0];
             foreach (var item in branchs)
             {
                 // 切换分支
