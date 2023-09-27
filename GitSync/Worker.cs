@@ -16,7 +16,16 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var set = SyncSetting.Current;
-        XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
+        //XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
+
+        // 支持命令 AddAll {path} ，扫描指定目录并添加所有仓库
+        var args = Environment.GetCommandLineArgs();
+        var idx = Array.IndexOf(args, "AddAll");
+        if (idx > 0 && args.Length > idx + 1)
+        {
+            AddAll(args[idx + 1], set);
+            return;
+        }
 
         var ms = set.Repos;
         if (ms != null && ms.Length > 0)
@@ -72,6 +81,35 @@ public class Worker : BackgroundService
         XTrace.WriteLine("远程：{0}", remotes.ToJson());
 
         return true;
+    }
+
+    void AddAll(String basePath, SyncSetting set)
+    {
+        //XTrace.WriteLine("basePath: {0}", basePath);
+        var di = basePath.AsDirectory();
+        if (!di.Exists) return;
+
+        // 扫描目录下所有仓库
+        var list = set.Repos?.ToList() ?? new List<Repo>();
+        foreach (var item in di.GetDirectories())
+        {
+            var path = item.FullName.CombinePath(".git");
+            if (!Directory.Exists(path)) continue;
+
+            var repo = new Repo
+            {
+                Name = item.Name,
+                Path = item.FullName,
+                Enable = true,
+            };
+            if (item.FullName.EqualIgnoreCase(set.BaseDirectory.CombinePath(repo.Name))) repo.Path = null;
+
+            if (!list.Any(e => e.Name == repo.Name)) list.Add(repo);
+        }
+
+        //XTrace.WriteLine(list.ToJson(true));
+        set.Repos = list.ToArray();
+        set.Save();
     }
 
     private static String? Execute(String cmd, String? arguments = null, String? worker = null)
