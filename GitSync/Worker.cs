@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using GitSync.Models;
 using NewLife.Serialization;
 
@@ -32,7 +33,7 @@ public class Worker : BackgroundService
         {
             foreach (var item in ms)
             {
-                ProcessRepo(set.BaseDirectory, item);
+                if (item.Enable) ProcessRepo(set.BaseDirectory, item);
             }
         }
 
@@ -49,9 +50,11 @@ public class Worker : BackgroundService
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);
         if (path.IsNullOrEmpty()) return false;
 
+        XTrace.WriteLine("同步：{0}", path);
+
         // 本地所有分支
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
-        if (branchs == null || branchs.Length == 0 || branchs[0] == "*")
+        if (/*branchs == null || branchs.Length == 0 ||*/ branchs.Length == 1 && branchs[0] == "*")
         {
             // 执行git branch命令，获得本地所有分支
             var rs = Execute("git", "branch", path);
@@ -80,7 +83,43 @@ public class Worker : BackgroundService
         }
         XTrace.WriteLine("远程：{0}", remotes.ToJson());
 
+        if (branchs == null || branchs.Length == 0)
+        {
+            ProcessRemotes(repo, path, remotes);
+        }
+        else
+        {
+            // 记住当前分支，最后要切回来
+            var currentBranch = branchs[0];
+            foreach (var item in branchs)
+            {
+                // 切换分支
+                ShellExecute("git", $"checkout {item}", path);
+
+                ProcessRemotes(repo, path, remotes);
+            }
+
+            ShellExecute("git", $"checkout {currentBranch}", path);
+        }
+
         return true;
+    }
+
+    void ProcessRemotes(Repo repo, String path, String[] remotes)
+    {
+        // git拉取所有远端
+        foreach (var item in remotes)
+        {
+            // 拉取远程库
+            ShellExecute("git", $"pull -v {item}", path);
+        }
+
+        // git推送所有远端
+        foreach (var item in remotes)
+        {
+            // 推送远程库
+            ShellExecute("git", $"push -v {item}", path);
+        }
     }
 
     void AddAll(String basePath, SyncSetting set)
@@ -117,7 +156,7 @@ public class Worker : BackgroundService
         try
         {
 #if DEBUG
-            if (XTrace.Log.Level <= LogLevel.Debug) XTrace.WriteLine("Execute({0} {1})", cmd, arguments);
+            XTrace.WriteLine("{0} {1}", cmd, arguments);
 #endif
 
             var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
@@ -142,5 +181,34 @@ public class Worker : BackgroundService
             return process.StandardOutput.ReadToEnd();
         }
         catch { return null; }
+    }
+
+    private static Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null)
+    {
+        try
+        {
+#if DEBUG
+            XTrace.WriteLine("{0} {1}", cmd, arguments);
+#endif
+
+            var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
+            {
+                UseShellExecute = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                WorkingDirectory = worker,
+            };
+            var process = Process.Start(psi);
+            if (process == null) return -1;
+
+            if (!process.WaitForExit(30_000))
+            {
+                process.Kill();
+                return process.ExitCode;
+            }
+
+            return process.ExitCode;
+        }
+        catch { return -2; }
     }
 }
