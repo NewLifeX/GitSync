@@ -11,8 +11,13 @@ namespace GitSync;
 public class Worker : BackgroundService
 {
     private readonly IHost _host;
+    private readonly ITracer _tracer;
 
-    public Worker(IHost host) => _host = host;
+    public Worker(IHost host, ITracer tracer)
+    {
+        _host = host;
+        _tracer = tracer;
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -50,6 +55,7 @@ public class Worker : BackgroundService
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);
         if (path.IsNullOrEmpty()) return false;
 
+        using var span = _tracer?.NewSpan(nameof(ProcessRepo), repo);
         XTrace.WriteLine("同步：{0}", path);
 
         // 本地所有分支
@@ -122,6 +128,8 @@ public class Worker : BackgroundService
 
     void ProcessRemotes(Repo repo, String path, String[] remotes)
     {
+        using var span = _tracer?.NewSpan(nameof(ProcessRepo), remotes);
+
         // git拉取所有远端
         foreach (var item in remotes)
         {
