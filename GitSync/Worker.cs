@@ -9,8 +9,19 @@ namespace GitSync;
 /// </summary>
 public class Worker : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    private readonly IHost _host;
+
+    public Worker(IHost host) => _host = host;
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return Task.CompletedTask;
+        var set = SyncSetting.Current;
+        XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
+
+        await Task.Delay(2_000);
+
+        _host.TryDispose();
+
+        //return Task.CompletedTask;
     }
 }
