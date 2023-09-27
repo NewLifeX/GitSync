@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyTitle>Git代码库同步</AssemblyTitle>
+    <Description>Git代码库同步，保持本地代码库到多个远程库之间的同步</Description>
+    <Company>新生命开发团队</Company>
+    <Copyright>©2002-2023 NewLife</Copyright>
+    <VersionPrefix>1.0</VersionPrefix>
+    <VersionSuffix>$([System.DateTime]::Now.ToString(`yyyy.MMdd`))</VersionSuffix>
+    <Version>$(VersionPrefix).$(VersionSuffix)</Version>
+    <FileVersion>$(Version)</FileVersion>
+    <AssemblyVersion>$(VersionPrefix).*</AssemblyVersion>
+    <Deterministic>false</Deterministic>
+    <OutputPath>..\Bin</OutputPath>
+    <!--<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>-->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="NewLife" />
+    <Using Include="NewLife.Log" />
+    <Using Include="NewLife.Model" />
+    <Using Include="NewLife.Reflection" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NewLife.Core" Version="10.6.2023.921-beta0257" />
+    <PackageReference Include="NewLife.Stardust" Version="2.9.2023.909-beta0002" />
+  </ItemGroup>
+
+</Project>
