@@ -106,7 +106,7 @@ public class Worker : BackgroundService
 
         if (branchs == null || branchs.Length == 0)
         {
-            ProcessRemotes(repo, path, remotes);
+            ProcessRemotes(repo, path, null, remotes);
         }
         else
         {
@@ -117,7 +117,7 @@ public class Worker : BackgroundService
                 // 切换分支
                 ShellExecute("git", $"checkout {item}", path);
 
-                ProcessRemotes(repo, path, remotes);
+                ProcessRemotes(repo, path, item, remotes);
             }
 
             ShellExecute("git", $"checkout {currentBranch}", path);
@@ -126,7 +126,7 @@ public class Worker : BackgroundService
         return true;
     }
 
-    void ProcessRemotes(Repo repo, String path, String[] remotes)
+    void ProcessRemotes(Repo repo, String path, String branch, String[] remotes)
     {
         using var span = _tracer?.NewSpan(nameof(ProcessRepo), remotes);
 
@@ -134,14 +134,14 @@ public class Worker : BackgroundService
         foreach (var item in remotes)
         {
             // 拉取远程库
-            ShellExecute("git", $"pull -v {item}", path);
+            ShellExecute("git", $"pull -v {item} {branch}", path);
         }
 
         // git推送所有远端
         foreach (var item in remotes)
         {
             // 推送远程库
-            ShellExecute("git", $"push -v {item}", path);
+            ShellExecute("git", $"push -v {item} {branch}", path);
         }
     }
 
@@ -216,13 +216,20 @@ public class Worker : BackgroundService
 
             var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
             {
-                UseShellExecute = true,
+                UseShellExecute = false,
                 CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
+                //WindowStyle = ProcessWindowStyle.Hidden,
                 WorkingDirectory = worker,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
-            var process = Process.Start(psi);
-            if (process == null) return -1;
+            var process = new Process { StartInfo = psi };
+            process.OutputDataReceived += (s, e) => XTrace.WriteLine(e.Data);
+            process.ErrorDataReceived += (s, e) => XTrace.WriteLine(e.Data);
+            process.Start();
+            //if (process == null) return -1;
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
 
             if (!process.WaitForExit(30_000))
             {
@@ -232,6 +239,10 @@ public class Worker : BackgroundService
 
             return process.ExitCode;
         }
-        catch { return -2; }
+        catch (Exception ex)
+        {
+            XTrace.Log.Error(ex.Message);
+            return -2;
+        }
     }
 }
