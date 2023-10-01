@@ -44,6 +44,7 @@ public class Worker : BackgroundService
 
         await Task.Delay(2_000);
 
+        _host.Close("同步完成");
         _host.TryDispose();
 
         //return Task.CompletedTask;
