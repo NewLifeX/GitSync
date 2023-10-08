@@ -42,7 +42,7 @@ public class Worker : BackgroundService
             }
         }
 
-        await Task.Delay(2_000);
+        await Task.Delay(2_000, stoppingToken);
 
         _host.Close("同步完成");
         _host.TryDispose();

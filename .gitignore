@@ -23,3 +23,5 @@ bld/
 Config/
 *.suo
 .vs/
+.idea/
+.vscode/
