@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.IO;
 using GitSync.Models;
 using NewLife.Serialization;
 
@@ -8,16 +7,10 @@ namespace GitSync;
 /// <summary>
 /// 后台任务。支持构造函数注入服务
 /// </summary>
-public class Worker : BackgroundService
+public class Worker(IHost host, ITracer tracer) : BackgroundService
 {
-    private readonly IHost _host;
-    private readonly ITracer _tracer;
-
-    public Worker(IHost host, ITracer tracer)
-    {
-        _host = host;
-        _tracer = tracer;
-    }
+    private readonly IHost _host = host;
+    private readonly ITracer _tracer = tracer;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -62,7 +55,7 @@ public class Worker : BackgroundService
         // 本地所有分支
         String currentBranch = null;
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
-        if (/*branchs == null || branchs.Length == 0 ||*/ branchs.Length == 1 && branchs[0] == "*")
+        if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
         {
             // 执行git branch命令，获得本地所有分支
             var rs = Execute("git", "branch", path);
@@ -72,7 +65,7 @@ public class Worker : BackgroundService
             var list = new List<String>();
             foreach (var item in ss)
             {
-                if (item.StartsWith("*"))
+                if (item.StartsWith('*'))
                 {
                     currentBranch = item[1..].Trim();
                     list.Add(item[1..].Trim());
@@ -153,7 +146,7 @@ public class Worker : BackgroundService
         if (!di.Exists) return;
 
         // 扫描目录下所有仓库
-        var list = set.Repos?.ToList() ?? new List<Repo>();
+        var list = set.Repos?.ToList() ?? [];
         foreach (var item in di.GetDirectories())
         {
             var path = item.FullName.CombinePath(".git");
@@ -179,9 +172,7 @@ public class Worker : BackgroundService
     {
         try
         {
-#if DEBUG
             XTrace.WriteLine("{0} {1}", cmd, arguments);
-#endif
 
             var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
             {
@@ -211,9 +202,7 @@ public class Worker : BackgroundService
     {
         try
         {
-#if DEBUG
             XTrace.WriteLine("{0} {1}", cmd, arguments);
-#endif
 
             var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
             {
