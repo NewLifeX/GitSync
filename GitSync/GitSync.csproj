@@ -25,9 +25,9 @@
     <Using Include="NewLife.Reflection" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NewLife.Agent" Version="10.7.2024.303" />
-    <PackageReference Include="NewLife.Core" Version="10.8.2024.303" />
-    <PackageReference Include="NewLife.Stardust" Version="2.9.2024.218" />
+    <PackageReference Include="NewLife.Agent" Version="10.7.2024.320-beta1230" />
+    <PackageReference Include="NewLife.Core" Version="10.8.2024.323-beta1405" />
+    <PackageReference Include="NewLife.Stardust" Version="2.9.2024.320-beta1238" />
   </ItemGroup>
 
 </Project>

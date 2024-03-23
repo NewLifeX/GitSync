@@ -25,15 +25,15 @@ internal class MyService : ServiceBase
 
         // 考虑到执行时间到达时计算机可能未启动，下次启动时，如果错过了某次执行，则立马执行。
         var set = SyncSetting.Current;
-        foreach (var tm in _timers)
+        foreach (var cron in _timer.Crons)
         {
-            if (tm.Cron != null && set.LastSync.Year > 2000)
+            if (set.LastSync.Year > 2000)
             {
-                var next = tm.Cron.GetNext(set.LastSync);
+                var next = cron.GetNext(set.LastSync);
                 if (next < DateTime.Now)
                 {
-                    WriteLog("错过了[{0}]的执行时间{1}，立即执行", tm.Cron, set.LastSync);
-                    tm.SetNext(-1);
+                    WriteLog("错过了[{0}]的执行时间{1}，立即执行", cron, set.LastSync);
+                    _timer.SetNext(-1);
                     break;
                 }
             }
@@ -42,8 +42,7 @@ internal class MyService : ServiceBase
 
     protected override void StopWork(String reason)
     {
-        _timers.TryDispose();
-        _timers.Clear();
+        _timer.TryDispose();
 
         base.StopWork(reason);
     }
@@ -58,35 +57,25 @@ internal class MyService : ServiceBase
         _lastCrons = crons;
 
         // 配置变化，重新加载定时器
-        _timers.TryDispose();
-        _timers.Clear();
+        _timer.TryDispose();
 
         WriteLog("创建定时器：{0}", crons);
 
         var next = DateTime.MaxValue;
         if (!crons.IsNullOrEmpty())
         {
-            // 多个Cron表达式，创建多个定时器
-            foreach (var item in crons.Split(";"))
-            {
-                var timer = new TimerX(DoWork, null, item) { Async = true };
-                _timers.Add(timer);
+            _timer = new TimerX(DoWork, null, crons) { Async = true };
 
-                if (next > timer.NextTime) next = timer.NextTime;
-            }
         }
         else
         {
-            var timer = new TimerX(DoWork, null, 1000, 3600_000) { Async = true };
-            _timers.Add(timer);
-
-            next = timer.NextTime;
+            _timer = new TimerX(DoWork, null, 1000, 3600_000) { Async = true };
         }
 
-        XTrace.WriteLine("下次执行时间：{0}", next);
+        XTrace.WriteLine("下次执行时间：{0}", _timer.NextTime);
     }
 
-    private IList<TimerX> _timers = [];
+    private TimerX _timer;
     private async Task DoWork(Object state)
     {
         //XTrace.WriteLine("DoWork");
