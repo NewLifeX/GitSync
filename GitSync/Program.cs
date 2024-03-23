@@ -14,7 +14,7 @@ internal class Program
         var services = ObjectContainer.Current;
         services.AddStardust();
 
-        new MyService().Main(args);
+        new MyService { ServiceProvider = services.BuildServiceProvider() }.Main(args);
 
         //// 注册后台任务 IHostedService
         //services.AddHostedService<Worker>();

@@ -6,7 +6,7 @@ namespace GitSync;
 internal class MyService : ServiceBase
 {
     #region 属性
-
+    public IServiceProvider ServiceProvider { get; set; }
     #endregion
 
     #region 构造
@@ -40,6 +40,8 @@ internal class MyService : ServiceBase
         _timers.TryDispose();
         _timers.Clear();
 
+        WriteLog("创建定时器：{0}", set.Crons);
+
         if (!set.Crons.IsNullOrEmpty())
         {
             // 多个Cron表达式，创建多个定时器
@@ -57,9 +59,15 @@ internal class MyService : ServiceBase
     }
 
     private IList<TimerX> _timers = [];
-    private void DoWork(Object state)
+    private async Task DoWork(Object state)
     {
-        XTrace.WriteLine("DoWork");
+        //XTrace.WriteLine("DoWork");
+
+        var tracer = ServiceProvider.GetService<ITracer>();
+        var worker = new Worker(null, tracer);
+        await worker.ExecuteAsync(default);
+
+        WriteLog("同步完成！");
 
         CheckTimer();
     }

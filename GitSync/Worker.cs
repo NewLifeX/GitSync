@@ -7,12 +7,12 @@ namespace GitSync;
 /// <summary>
 /// 后台任务。支持构造函数注入服务
 /// </summary>
-public class Worker(IHost host, ITracer tracer) : BackgroundService
+public class Worker(IHost host, ITracer tracer) //: BackgroundService
 {
     private readonly IHost _host = host;
     private readonly ITracer _tracer = tracer;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var set = SyncSetting.Current;
         //XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
@@ -37,8 +37,8 @@ public class Worker(IHost host, ITracer tracer) : BackgroundService
 
         await Task.Delay(2_000, stoppingToken);
 
-        _host.Close("同步完成");
-        _host.TryDispose();
+        _host?.Close("同步完成");
+        _host?.TryDispose();
 
         //return Task.CompletedTask;
     }
@@ -49,7 +49,7 @@ public class Worker(IHost host, ITracer tracer) : BackgroundService
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);
         if (path.IsNullOrEmpty()) return false;
 
-        using var span = _tracer?.NewSpan(nameof(ProcessRepo), repo);
+        using var span = _tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
         XTrace.WriteLine("同步：{0}", path);
 
         // 本地所有分支
@@ -122,7 +122,7 @@ public class Worker(IHost host, ITracer tracer) : BackgroundService
 
     void ProcessRemotes(Repo repo, String path, String branch, String[] remotes)
     {
-        using var span = _tracer?.NewSpan(nameof(ProcessRepo), remotes);
+        using var span = _tracer?.NewSpan($"ProcessRemotes-{repo.Name}", remotes);
 
         // git拉取所有远端
         foreach (var item in remotes)
