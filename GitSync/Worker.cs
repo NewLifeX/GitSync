@@ -12,6 +12,13 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
     private readonly IHost _host = host;
     private readonly ITracer _tracer = tracer;
 
+    static Worker()
+    {
+        Environment.SetEnvironmentVariable("GIT_TEST_DEBUG_UNSAFE_DIRECTORIES", "true");
+
+        Process.Start("git", "config --global --add safe.directory *");
+    }
+
     public async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var set = SyncSetting.Current;
