@@ -18,6 +18,9 @@ internal class MyService : ServiceBase
     {
         CheckTimer();
 
+        // 配置改变时重新加载
+        SyncSetting.Provider.Changed += (s, e) => CheckTimer();
+
         base.StartWork(reason);
     }
 
@@ -34,28 +37,37 @@ internal class MyService : ServiceBase
     {
         // 如果配置未变化，则不处理。首次_lastCrons为空
         var set = SyncSetting.Current;
-        if (set.Crons + "" == _lastCrons) return;
+        var crons = set.Crons + "";
+        if (crons == _lastCrons) return;
+        _lastCrons = crons;
 
         // 配置变化，重新加载定时器
         _timers.TryDispose();
         _timers.Clear();
 
-        WriteLog("创建定时器：{0}", set.Crons);
+        WriteLog("创建定时器：{0}", crons);
 
-        if (!set.Crons.IsNullOrEmpty())
+        var next = DateTime.MaxValue;
+        if (!crons.IsNullOrEmpty())
         {
             // 多个Cron表达式，创建多个定时器
-            foreach (var item in set.Crons.Split(";"))
+            foreach (var item in crons.Split(";"))
             {
                 var timer = new TimerX(DoWork, null, item) { Async = true };
                 _timers.Add(timer);
+
+                if (next > timer.NextTime) next = timer.NextTime;
             }
         }
         else
         {
             var timer = new TimerX(DoWork, null, 1000, 3600_000) { Async = true };
             _timers.Add(timer);
+
+            next = timer.NextTime;
         }
+
+        XTrace.WriteLine("下次执行时间：{0}", next);
     }
 
     private IList<TimerX> _timers = [];

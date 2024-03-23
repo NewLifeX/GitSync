@@ -25,18 +25,11 @@ public class SyncSetting : Config<SyncSetting>
         var ms = Repos;
         if (ms == null || ms.Length == 0)
         {
-            Repos = new[] {
-                new Repo {
-                    Name = "test",
-                    Branchs = "dev,master",
-                    Remotes = "origin,github"
-                },
-                new Repo {
-                    Name = "test2",
-                    Branchs = "dev,master",
-                    Remotes = "origin,github"
-                },
-            };
+            Repos =
+            [
+                new Repo { Name = "test", Branchs = "dev,master", Remotes = "origin,github" },
+                new Repo { Name = "test2", Branchs = "dev,master", Remotes = "origin,github" },
+            ];
         }
 
         base.OnLoaded();
