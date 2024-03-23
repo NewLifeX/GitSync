@@ -12,6 +12,10 @@ public class SyncSetting : Config<SyncSetting>
     [Description("基础目录")]
     public String BaseDirectory { get; set; }
 
+    /// <summary>Cron表达式。控制定时执行，多个分号隔开</summary>
+    [Description("Cron表达式。控制定时执行，多个分号隔开")]
+    public String Crons { get; set; }
+
     /// <summary>集合</summary>
     [Description("集合")]
     public Repo[] Repos { get; set; }
