@@ -62,7 +62,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         // 本地所有分支
         String currentBranch = null;
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
-        if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
+
         {
             // 执行git branch命令，获得本地所有分支
             var rs = Execute("git", "branch", path);
@@ -82,8 +82,11 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                     list.Add(item);
                 }
             }
-            branchs = list.Distinct().ToArray();
+
+            if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
+                branchs = list.Distinct().ToArray();
         }
+
         XTrace.WriteLine("分支：{0}", branchs.ToJson());
 
         // 本地所有远程库
@@ -129,7 +132,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
 
     void ProcessRemotes(Repo repo, String path, String branch, String[] remotes)
     {
-        using var span = _tracer?.NewSpan($"ProcessRemotes-{repo.Name}", remotes);
+        using var span = _tracer?.NewSpan($"ProcessRemotes-{repo.Name}", new { path, branch, remotes });
 
         // git拉取所有远端
         foreach (var item in remotes)
@@ -148,6 +151,8 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
 
     void AddAll(String basePath, SyncSetting set)
     {
+        using var span = _tracer?.NewSpan("AddAll", basePath);
+
         //XTrace.WriteLine("basePath: {0}", basePath);
         var di = basePath.AsDirectory();
         if (!di.Exists) return;
@@ -175,8 +180,9 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         set.Save();
     }
 
-    private static String? Execute(String cmd, String? arguments = null, String? worker = null)
+    private String? Execute(String cmd, String? arguments = null, String? worker = null)
     {
+        using var span = _tracer?.NewSpan("Execute", $"{cmd} {arguments} worker={worker}");
         try
         {
             XTrace.WriteLine("{0} {1}", cmd, arguments);
@@ -202,11 +208,16 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
 
             return process.StandardOutput.ReadToEnd();
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            span?.SetError(ex, null);
+            return null;
+        }
     }
 
-    private static Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null)
+    private Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null)
     {
+        using var span = _tracer?.NewSpan("ShellExecute", $"{cmd} {arguments} worker={worker}");
         try
         {
             XTrace.WriteLine("{0} {1}", cmd, arguments);
@@ -238,6 +249,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         }
         catch (Exception ex)
         {
+            span?.SetError(ex, null);
             XTrace.Log.Error(ex.Message);
             return -2;
         }
