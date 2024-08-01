@@ -6,7 +6,7 @@
     <AssemblyTitle>Git代码库同步</AssemblyTitle>
     <Description>Git代码库同步，保持本地代码库到多个远程库之间的同步</Description>
     <Company>新生命开发团队</Company>
-    <Copyright>©2002-2023 NewLife</Copyright>
+    <Copyright>©2002-2024 NewLife</Copyright>
     <VersionPrefix>1.0</VersionPrefix>
     <VersionSuffix>$([System.DateTime]::Now.ToString(`yyyy.MMdd`))</VersionSuffix>
     <Version>$(VersionPrefix).$(VersionSuffix)</Version>
@@ -25,9 +25,9 @@
     <Using Include="NewLife.Reflection" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NewLife.Agent" Version="10.7.2024.320-beta1230" />
-    <PackageReference Include="NewLife.Core" Version="10.8.2024.327-beta0307" />
-    <PackageReference Include="NewLife.Stardust" Version="2.9.2024.327-beta0942" />
+    <PackageReference Include="NewLife.Agent" Version="10.9.2024.801" />
+    <PackageReference Include="NewLife.Core" Version="10.10.2024.801" />
+    <PackageReference Include="NewLife.Stardust" Version="3.0.2024.801" />
   </ItemGroup>
 
 </Project>

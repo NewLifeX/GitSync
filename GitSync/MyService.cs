@@ -14,7 +14,7 @@ internal class MyService : ServiceBase
     #endregion
 
     #region 方法
-    protected override void StartWork(String reason)
+    public override void StartWork(String reason)
     {
         CheckTimer();
 
@@ -40,7 +40,7 @@ internal class MyService : ServiceBase
         }
     }
 
-    protected override void StopWork(String reason)
+    public override void StopWork(String reason)
     {
         _timer.TryDispose();
 
