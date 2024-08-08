@@ -7,12 +7,21 @@ internal class Program
 {
     private static void Main(string[] args)
     {
+        //Runtime.CreateConfigOnMissing = false;
+
         // 启用控制台日志，拦截所有异常
         XTrace.UseConsole();
 
         // 初始化对象容器，提供注入能力
         var services = ObjectContainer.Current;
         services.AddStardust();
+
+        var set = SyncSetting.Current;
+        if (set.IsNew)
+        {
+            set.Crons = "0 0 * * * ?";
+            set.Save();
+        }
 
         new MyService { ServiceProvider = services.BuildServiceProvider() }.Main(args);
 

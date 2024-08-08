@@ -19,7 +19,7 @@ internal class MyService : ServiceBase
         CheckTimer();
 
         // 配置改变时重新加载
-        SyncSetting.Provider.Changed += (s, e) => CheckTimer();
+        SyncSetting.Provider.Changed += Provider_Changed;
 
         base.StartWork(reason);
 
@@ -40,8 +40,12 @@ internal class MyService : ServiceBase
         }
     }
 
+    private void Provider_Changed(Object sender, EventArgs e) => CheckTimer();
+
     public override void StopWork(String reason)
     {
+        SyncSetting.Provider.Changed -= Provider_Changed;
+
         _timer.TryDispose();
         _lastCrons = null;
 

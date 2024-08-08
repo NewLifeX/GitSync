@@ -63,7 +63,6 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         gr.GetBranchs();
 
         // 本地所有分支
-        String currentBranch = null;
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
         if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
             branchs = gr.Branchs;
@@ -89,7 +88,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         else
         {
             // 记住当前分支，最后要切回来
-            currentBranch ??= branchs[0];
+            var currentBranch = gr.CurrentBranch ?? branchs[0];
             foreach (var item in branchs)
             {
                 // 切换分支
