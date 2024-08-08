@@ -25,9 +25,9 @@ internal class MyService : ServiceBase
 
         // 考虑到执行时间到达时计算机可能未启动，下次启动时，如果错过了某次执行，则立马执行。
         var set = SyncSetting.Current;
-        foreach (var cron in _timer.Crons)
+        if (set.LastSync.Year > 2000 && _timer?.Crons != null)
         {
-            if (set.LastSync.Year > 2000)
+            foreach (var cron in _timer.Crons)
             {
                 var next = cron.GetNext(set.LastSync);
                 if (next < DateTime.Now)
@@ -43,6 +43,7 @@ internal class MyService : ServiceBase
     public override void StopWork(String reason)
     {
         _timer.TryDispose();
+        _lastCrons = null;
 
         base.StopWork(reason);
     }
