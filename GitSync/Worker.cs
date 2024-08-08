@@ -59,58 +59,32 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         using var span = _tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
         XTrace.WriteLine("同步：{0}", path);
 
+        var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
+        gr.GetBranchs();
+
         // 本地所有分支
         String currentBranch = null;
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
-
-        {
-            // 执行git branch命令，获得本地所有分支
-            var rs = Execute("git", "branch", path);
-            if (rs.IsNullOrEmpty()) return false;
-
-            var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim()).ToArray();
-            var list = new List<String>();
-            foreach (var item in ss)
-            {
-                if (item.StartsWith('*'))
-                {
-                    currentBranch = item[1..].Trim();
-                    list.Add(item[1..].Trim());
-                }
-                else
-                {
-                    list.Add(item);
-                }
-            }
-
-            if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
-                branchs = list.Distinct().ToArray();
-        }
+        if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
+            branchs = gr.Branchs;
+        else
+            gr.Branchs = branchs;
 
         XTrace.WriteLine("分支：{0}", branchs.ToJson());
 
         // 本地所有远程库
         var remotes = repo.Remotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
         if (remotes == null || remotes.Length == 0 || remotes[0] == "*")
-        {
-            // 执行git branch命令，获得本地所有分支
-            var rs = Execute("git", "branch -r", path);
-            if (rs.IsNullOrEmpty()) return false;
+            remotes = gr.GetRemotes();
+        else
+            gr.Remotes = remotes;
 
-            var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries);
-            var list = new List<String>();
-            foreach (var item in ss)
-            {
-                var p = item.IndexOf('/');
-                if (p > 0) list.Add(item[..p].Trim());
-            }
-            remotes = list.Distinct().ToArray();
-        }
         XTrace.WriteLine("远程：{0}", remotes.ToJson());
 
         if (branchs == null || branchs.Length == 0)
         {
-            ProcessRemotes(repo, path, null, remotes);
+            gr.PullAll(null);
+            gr.PushAll(null);
         }
         else
         {
@@ -119,34 +93,15 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
             foreach (var item in branchs)
             {
                 // 切换分支
-                ShellExecute("git", $"checkout {item}", path);
-
-                ProcessRemotes(repo, path, item, remotes);
+                gr.Checkout(item);
+                gr.PullAll(item);
+                gr.PushAll(item);
             }
 
-            ShellExecute("git", $"checkout {currentBranch}", path);
+            gr.Checkout(currentBranch);
         }
 
         return true;
-    }
-
-    void ProcessRemotes(Repo repo, String path, String branch, String[] remotes)
-    {
-        using var span = _tracer?.NewSpan($"ProcessRemotes-{repo.Name}", new { path, branch, remotes });
-
-        // git拉取所有远端
-        foreach (var item in remotes)
-        {
-            // 拉取远程库
-            ShellExecute("git", $"pull -v {item} {branch}", path);
-        }
-
-        // git推送所有远端
-        foreach (var item in remotes)
-        {
-            // 推送远程库
-            ShellExecute("git", $"push -v {item} {branch}", path);
-        }
     }
 
     void AddAll(String basePath, SyncSetting set)
@@ -178,80 +133,5 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         //XTrace.WriteLine(list.ToJson(true));
         set.Repos = list.ToArray();
         set.Save();
-    }
-
-    private String? Execute(String cmd, String? arguments = null, String? worker = null)
-    {
-        using var span = _tracer?.NewSpan("Execute", $"{cmd} {arguments} worker={worker}");
-        try
-        {
-            XTrace.WriteLine("{0} {1}", cmd, arguments);
-
-            var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
-            {
-                // UseShellExecute 必须 false，以便于后续重定向输出流
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                //RedirectStandardError = true,
-                WorkingDirectory = worker,
-            };
-            var process = Process.Start(psi);
-            if (process == null) return null;
-
-            if (!process.WaitForExit(3_000))
-            {
-                process.Kill();
-                return null;
-            }
-
-            return process.StandardOutput.ReadToEnd();
-        }
-        catch (Exception ex)
-        {
-            span?.SetError(ex, null);
-            return null;
-        }
-    }
-
-    private Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null)
-    {
-        using var span = _tracer?.NewSpan("ShellExecute", $"{cmd} {arguments} worker={worker}");
-        try
-        {
-            XTrace.WriteLine("{0} {1}", cmd, arguments);
-
-            var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                //WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = worker,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            var process = new Process { StartInfo = psi };
-            process.OutputDataReceived += (s, e) => XTrace.WriteLine(e.Data);
-            process.ErrorDataReceived += (s, e) => XTrace.WriteLine(e.Data);
-            process.Start();
-            //if (process == null) return -1;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            if (!process.WaitForExit(30_000))
-            {
-                process.Kill();
-                return process.ExitCode;
-            }
-
-            return process.ExitCode;
-        }
-        catch (Exception ex)
-        {
-            span?.SetError(ex, null);
-            XTrace.Log.Error(ex.Message);
-            return -2;
-        }
     }
 }
