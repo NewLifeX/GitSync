@@ -83,6 +83,9 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         if (branchs == null || branchs.Length == 0)
         {
             gr.PullAll(null);
+
+            if (repo.Upgrade) Upgrade(repo, gr, path);
+
             gr.PushAll(null);
         }
         else
@@ -94,6 +97,10 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                 // 切换分支
                 gr.Checkout(item);
                 gr.PullAll(item);
+
+                if (repo.Upgrade && item.EqualIgnoreCase("master", "main", "dev"))
+                    Upgrade(repo, gr, path);
+
                 gr.PushAll(item);
             }
 
@@ -132,5 +139,40 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         //XTrace.WriteLine(list.ToJson(true));
         set.Repos = list.ToArray();
         set.Save();
+    }
+
+    private static Boolean _check;
+    void Upgrade(Repo repo, GitRepo gr, String path)
+    {
+        if (!_check)
+        {
+            CheckTool();
+            _check = true;
+        }
+
+        // 更新Nuget包
+        "dotnet-outdated".Run("-u", 30_000, null, null, path);
+
+        // 编译
+        var rs = "dotnet".Run("build", 30_000, null, null, path);
+
+        // Git提交。编译成功才提交，否则回滚
+        if (rs == 0)
+            "git".Run("commit -a -m \"Upgrade Nuget\"", 5_000, null, null, path);
+        else
+            "git".Run("reset --hard", 5_000, null, null, path);
+    }
+
+    static void CheckTool()
+    {
+        var rs = "dotnet".Execute("tool list -g", 3_000);
+
+        var ss = rs?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        var line = ss?.FirstOrDefault(e => e.StartsWith("dotnet-outdated-tool"));
+        if (line.IsNullOrEmpty())
+        {
+            rs = "dotnet".Execute("tool install dotnet-outdated-tool -g");
+            XTrace.WriteLine(rs);
+        }
     }
 }

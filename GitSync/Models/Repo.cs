@@ -1,4 +1,5 @@
-﻿using System.Xml.Serialization;
+﻿using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace GitSync.Models;
 
@@ -23,4 +24,8 @@ public class Repo
     /// <summary>要同步的远程库。为空时同步所有库，多个库逗号隔开</summary>
     [XmlAttribute]
     public String Remotes { get; set; }
+
+    /// <summary>更新Nuget包</summary>
+    [XmlAttribute]
+    public Boolean Upgrade { get; set; }
 }
