@@ -50,7 +50,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         //return Task.CompletedTask;
     }
 
-    Boolean ProcessRepo(String basePath, Repo repo)
+    public Boolean ProcessRepo(String basePath, Repo repo)
     {
         // 基础目录
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);

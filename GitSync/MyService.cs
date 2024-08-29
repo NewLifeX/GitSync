@@ -1,5 +1,7 @@
 ﻿using NewLife.Agent;
+using NewLife.Remoting.Clients;
 using NewLife.Threading;
+using Stardust;
 
 namespace GitSync;
 
@@ -38,6 +40,12 @@ internal class MyService : ServiceBase
                 }
             }
         }
+
+        var factory = ServiceProvider.GetService<StarFactory>();
+        if (factory != null && factory.App != null)
+        {
+            factory.App.RegisterCommand("test", Test);
+        }
     }
 
     private void Provider_Changed(Object sender, EventArgs e) => CheckTimer();
@@ -50,6 +58,24 @@ internal class MyService : ServiceBase
         _lastCrons = null;
 
         base.StopWork(reason);
+    }
+
+    private String Test(String arg)
+    {
+        if (arg.IsNullOrEmpty())
+            _timer?.SetNext(-1);
+        else
+        {
+            var set = SyncSetting.Current;
+            var repo = set.Repos.FirstOrDefault(e => e.Name.EqualIgnoreCase(arg));
+            if (repo == null) return "未找到仓库" + arg;
+
+            var tracer = ServiceProvider.GetService<ITracer>();
+            var worker = new Worker(null, tracer);
+            worker.ProcessRepo(set.BaseDirectory, repo);
+        }
+
+        return "OK";
     }
 
     String _lastCrons;
