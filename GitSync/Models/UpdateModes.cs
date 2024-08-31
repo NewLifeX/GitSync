@@ -6,10 +6,10 @@ public enum UpdateModes
     None = 0,
 
     /// <summary>默认升级，排除指定项，不含预览版</summary>
-    Default = 1,
+    Exclude = 1,
 
     /// <summary>升级所有包，不排除任何项，不含预览版</summary>
-    NoExclude = 2,
+    Default = 2,
 
     /// <summary>全面升级，包括预览版</summary>
     Full = 4,

@@ -156,7 +156,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         {
             case UpdateModes.None:
                 return;
-            case UpdateModes.Default:
+            case UpdateModes.Exclude:
                 // 需要排除指定项，因此需要先查询所有可升级包
                 var pkgs = new List<String>();
                 var excludes = (set.Excludes + "").Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -182,7 +182,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                 else
                     "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
                 break;
-            case UpdateModes.NoExclude:
+            case UpdateModes.Default:
                 "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
                 break;
             case UpdateModes.Full:
