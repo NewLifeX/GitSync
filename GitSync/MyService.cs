@@ -72,7 +72,7 @@ internal class MyService : ServiceBase
 
             var tracer = ServiceProvider.GetService<ITracer>();
             var worker = new Worker(null, tracer);
-            worker.ProcessRepo(set.BaseDirectory, repo);
+            worker.ProcessRepo(set.BaseDirectory, repo, set);
         }
 
         return "OK";

@@ -25,7 +25,11 @@ public class Repo
     [XmlAttribute]
     public String Remotes { get; set; }
 
+    ///// <summary>更新Nuget包</summary>
+    //[XmlAttribute]
+    //public Boolean Upgrade { get; set; }
+
     /// <summary>更新Nuget包</summary>
     [XmlAttribute]
-    public Boolean Upgrade { get; set; }
+    public UpdateModes UpdateMode { get; set; }
 }

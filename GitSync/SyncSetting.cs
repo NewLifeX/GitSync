@@ -20,6 +20,10 @@ public class SyncSetting : Config<SyncSetting>
     [Description("最后同步。记录最后一次同步时间。考虑到执行时间到达时计算机可能未启动，下次启动时，如果错过了某次执行，则立马执行。")]
     public DateTime LastSync { get; set; }
 
+    /// <summary>Nuget升级时要排除的包。不区分大小写，支持*模糊匹配</summary>
+    [Description("Nuget升级时要排除的包。不区分大小写，支持*模糊匹配")]
+    public String Excludes { get; set; }
+
     /// <summary>集合</summary>
     [Description("集合")]
     public Repo[] Repos { get; set; }

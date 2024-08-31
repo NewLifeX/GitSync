@@ -38,7 +38,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         {
             foreach (var item in ms)
             {
-                if (item.Enable) ProcessRepo(set.BaseDirectory, item);
+                if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
             }
         }
 
@@ -50,7 +50,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         //return Task.CompletedTask;
     }
 
-    public Boolean ProcessRepo(String basePath, Repo repo)
+    public Boolean ProcessRepo(String basePath, Repo repo, SyncSetting set)
     {
         // 基础目录
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);
@@ -84,7 +84,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         {
             gr.PullAll(null);
 
-            if (repo.Upgrade) Upgrade(repo, gr, path);
+            if (repo.UpdateMode > 0) Update(repo, gr, path, set);
 
             gr.PushAll(null);
         }
@@ -98,8 +98,8 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                 gr.Checkout(item);
                 gr.PullAll(item);
 
-                if (repo.Upgrade && item.EqualIgnoreCase("master", "main", "dev"))
-                    Upgrade(repo, gr, path);
+                if (repo.UpdateMode > 0 && item.EqualIgnoreCase("master", "main", "dev"))
+                    Update(repo, gr, path, set);
 
                 gr.PushAll(item);
             }
@@ -142,7 +142,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
     }
 
     private static Boolean _check;
-    void Upgrade(Repo repo, GitRepo gr, String path)
+    void Update(Repo repo, GitRepo gr, String path, SyncSetting set)
     {
         if (!_check)
         {
@@ -151,7 +151,46 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         }
 
         // 更新Nuget包
-        "dotnet-outdated".Run("-u", 30_000, null, null, path);
+        //"dotnet-outdated".Run("-u", 30_000, null, null, path);
+        switch (repo.UpdateMode)
+        {
+            case UpdateModes.None:
+                return;
+            case UpdateModes.Default:
+                // 需要排除指定项，因此需要先查询所有可升级包
+                var pkgs = new List<String>();
+                var excludes = (set.Excludes + "").Split(",", StringSplitOptions.RemoveEmptyEntries);
+                if (excludes != null && excludes.Length > 0)
+                {
+                    var result = "dotnet-outdated".Run("-pre Never", 30_000, null, null, path);
+                    var lines = (result + "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var item in lines)
+                    {
+                        if (!item.Contains("->")) continue;
+
+                        var line = item.Trim();
+                        var p = line.IndexOf(' ');
+                        if (p < 0) continue;
+
+                        var name = line[..p].Trim();
+                        if (!name.IsNullOrEmpty() && excludes.Any(e => e.IsMatch(name, StringComparison.OrdinalIgnoreCase)))
+                            pkgs.Add(name);
+                    }
+                }
+                if (pkgs.Count > 0)
+                    "dotnet-outdated".Run("-u -pre Never " + pkgs.Join(" ", e => $"-exc {e}"), 30_000, null, null, path);
+                else
+                    "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
+                break;
+            case UpdateModes.NoExclude:
+                "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
+                break;
+            case UpdateModes.Full:
+                "dotnet-outdated".Run("-u", 30_000, null, null, path);
+                break;
+            default:
+                break;
+        }
 
         // 编译
         var rs = "dotnet".Run("build", 30_000, null, null, path);
