@@ -62,6 +62,10 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
         gr.GetBranchs();
 
+        // 如果本地有未提交文件，则跳过处理
+        var changes = gr.GetChanges();
+        if (changes.Count > 0) return false;
+
         // 本地所有分支
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
         if (branchs == null || branchs.Length == 0 || branchs.Length == 1 && branchs[0] == "*")
@@ -192,14 +196,18 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                 break;
         }
 
+        // 是否有文件更新
+        var changes = gr.GetChanges();
+        if (changes.Count == 0) return;
+
         // 编译
         var rs = "dotnet".Run("build", 30_000, null, null, path);
 
         // Git提交。编译成功才提交，否则回滚
         if (rs == 0)
-            "git".Run("commit -a -m \"Upgrade Nuget\"", 5_000, null, null, path);
+            "git".Run("commit -a -m \"Upgrade Nuget\"", 15_000, null, null, path);
         else
-            "git".Run("reset --hard", 5_000, null, null, path);
+            "git".Run("reset --hard", 15_000, null, null, path);
     }
 
     static void CheckTool()

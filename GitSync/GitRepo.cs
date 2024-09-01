@@ -102,6 +102,31 @@ public class GitRepo
             Push(remote, branch);
         }
     }
+
+    public IDictionary<String, String> GetChanges()
+    {
+        var dic = new Dictionary<String, String>();
+
+        var rs = Execute("git", "status -s", Path);
+        if (rs.IsNullOrEmpty()) return dic;
+
+        var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries);
+        foreach (var item in ss)
+        {
+            var line = item.Trim();
+            if (line.IsNullOrEmpty()) continue;
+
+            var p = line.IndexOf(' ');
+            if (p > 0)
+            {
+                var act = line[..p].Trim();
+                var file = line[(p + 1)..].Trim('\"');
+                dic[file] = act;
+            }
+        }
+
+        return dic;
+    }
     #endregion
 
     #region 辅助
