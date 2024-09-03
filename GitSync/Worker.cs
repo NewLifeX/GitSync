@@ -102,7 +102,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
                 gr.Checkout(item);
                 gr.PullAll(item);
 
-                if (repo.UpdateMode > 0 && item.EqualIgnoreCase("master", "main", "dev"))
+                if (repo.UpdateMode > 0 && item == currentBranch)
                     Update(repo, gr, path, set);
 
                 gr.PushAll(item);
