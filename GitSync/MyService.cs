@@ -1,4 +1,5 @@
 ﻿using NewLife.Agent;
+using NewLife.Model;
 using NewLife.Remoting.Clients;
 using NewLife.Threading;
 using Stardust;
@@ -71,7 +72,8 @@ internal class MyService : ServiceBase
             if (repo == null) return "未找到仓库" + arg;
 
             var tracer = ServiceProvider.GetService<ITracer>();
-            var worker = new Worker(null, tracer);
+            //var worker = new Worker(null, ServiceProvider, tracer);
+            var worker = ServiceProvider.CreateInstance(typeof(Worker)) as Worker;
             worker.ProcessRepo(set.BaseDirectory, repo, set);
         }
 
@@ -112,7 +114,8 @@ internal class MyService : ServiceBase
         //XTrace.WriteLine("DoWork");
 
         var tracer = ServiceProvider.GetService<ITracer>();
-        var worker = new Worker(null, tracer);
+        //var worker = new Worker(null, tracer);
+        var worker = ServiceProvider.CreateInstance(typeof(Worker)) as Worker;
         await worker.ExecuteAsync(default);
 
         var set = SyncSetting.Current;

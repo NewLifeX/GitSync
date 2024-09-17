@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using GitSync.Models;
+using NewLife.Remoting.Clients;
 using NewLife.Serialization;
 
 namespace GitSync;
@@ -7,10 +8,21 @@ namespace GitSync;
 /// <summary>
 /// 后台任务。支持构造函数注入服务
 /// </summary>
-public class Worker(IHost host, ITracer tracer) //: BackgroundService
+public class Worker //: BackgroundService
 {
-    private readonly IHost _host = host;
-    private readonly ITracer _tracer = tracer;
+    private readonly IHost _host;
+    private IEventProvider _eventProvider;
+    private readonly ITracer _tracer;
+
+    /// <summary>
+    /// 后台任务。支持构造函数注入服务
+    /// </summary>
+    public Worker(IHost host, IServiceProvider serviceProvider, ITracer tracer)
+    {
+        _host = host;
+        _eventProvider = serviceProvider.GetService<IEventProvider>();
+        _tracer = tracer;
+    }
 
     static Worker()
     {
@@ -57,7 +69,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         if (path.IsNullOrEmpty()) return false;
 
         using var span = _tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
-        XTrace.WriteLine("同步：{0}", path);
+        WriteLog("同步：{0}", path);
 
         var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
         gr.GetBranchs();
@@ -73,7 +85,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         else
             gr.Branchs = branchs;
 
-        XTrace.WriteLine("分支：{0}", branchs.ToJson());
+        WriteLog("分支：{0}", branchs.ToJson());
 
         // 本地所有远程库
         var remotes = repo.Remotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -82,7 +94,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         else
             gr.Remotes = remotes;
 
-        XTrace.WriteLine("远程：{0}", remotes.ToJson());
+        WriteLog("远程：{0}", remotes.ToJson());
 
         if (branchs == null || branchs.Length == 0)
         {
@@ -210,7 +222,7 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
             "git".Run("reset --hard", 15_000, null, null, path);
     }
 
-    static void CheckTool()
+    void CheckTool()
     {
         var rs = "dotnet".Execute("tool list -g", 3_000);
 
@@ -219,7 +231,13 @@ public class Worker(IHost host, ITracer tracer) //: BackgroundService
         if (line.IsNullOrEmpty())
         {
             rs = "dotnet".Execute("tool install dotnet-outdated-tool -g");
-            XTrace.WriteLine(rs);
+            WriteLog(rs);
         }
+    }
+
+    private void WriteLog(String format, params Object[] args)
+    {
+        XTrace.WriteLine(format, args);
+        _eventProvider?.WriteInfoEvent("Worker", String.Format(format, args));
     }
 }
