@@ -2,6 +2,7 @@
 using GitSync.Models;
 using NewLife.Remoting.Clients;
 using NewLife.Serialization;
+using Stardust.Registry;
 
 namespace GitSync;
 
@@ -20,7 +21,7 @@ public class Worker //: BackgroundService
     public Worker(IHost host, IServiceProvider serviceProvider, ITracer tracer)
     {
         _host = host;
-        _eventProvider = serviceProvider.GetService<IEventProvider>();
+        _eventProvider = serviceProvider.GetService<IRegistry>() as IEventProvider;
         _tracer = tracer;
     }
 
@@ -235,7 +236,7 @@ public class Worker //: BackgroundService
 
     void CheckTool()
     {
-        var rs = "dotnet".Execute("tool list -g", 3_000);
+        var rs = "dotnet".Execute("tool list -g", 30_000);
 
         var ss = rs?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         var line = ss?.FirstOrDefault(e => e.StartsWith("dotnet-outdated-tool"));
