@@ -171,7 +171,13 @@ public class Worker //: BackgroundService
             _check = true;
         }
 
+        // 如果有多个解决方案，选择最大的那个
+        var sln = "";
+        var slns = ".".AsDirectory().GetFiles("*.sln").OrderByDescending(e => e.Length).ToList();
+        if (slns.Count > 1) sln = slns[0].Name;
+
         // 更新Nuget包
+        var timeout = 60_000;
         //"dotnet-outdated".Run("-u", 30_000, null, null, path);
         switch (repo.UpdateMode)
         {
@@ -183,7 +189,7 @@ public class Worker //: BackgroundService
                 var excludes = (set.Excludes + "").Split(",", StringSplitOptions.RemoveEmptyEntries);
                 if (excludes != null && excludes.Length > 0)
                 {
-                    var result = "dotnet-outdated".Run("-pre Never", 30_000, null, null, path);
+                    var result = "dotnet-outdated".Run($"-pre Never {sln}", timeout, null, null, path);
                     var lines = (result + "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var item in lines)
                     {
@@ -199,15 +205,15 @@ public class Worker //: BackgroundService
                     }
                 }
                 if (pkgs.Count > 0)
-                    "dotnet-outdated".Run("-u -pre Never " + pkgs.Join(" ", e => $"-exc {e}"), 30_000, null, null, path);
+                    "dotnet-outdated".Run($"-u -pre Never {sln} " + pkgs.Join(" ", e => $"-exc {e}"), timeout, null, null, path);
                 else
-                    "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
+                    "dotnet-outdated".Run($"-u -pre Never {sln}", timeout, null, null, path);
                 break;
             case UpdateModes.Default:
-                "dotnet-outdated".Run("-u -pre Never", 30_000, null, null, path);
+                "dotnet-outdated".Run($"-u -pre Never {sln}", timeout, null, null, path);
                 break;
             case UpdateModes.Full:
-                "dotnet-outdated".Run("-u", 30_000, null, null, path);
+                "dotnet-outdated".Run($"-u {sln}", timeout, null, null, path);
                 break;
             default:
                 break;
@@ -218,7 +224,7 @@ public class Worker //: BackgroundService
         if (changes.Count == 0) return;
 
         // 编译
-        var rs = "dotnet".Run("build", 30_000, null, null, path);
+        var rs = "dotnet".Run("build", timeout, null, null, path);
 
         // Git提交。编译成功才提交，否则回滚
         if (rs == 0)
