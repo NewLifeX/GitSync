@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Threading;
+using GitSync.Models;
 
 namespace GitSync;
 
@@ -63,12 +65,16 @@ public class GitRepo
 
     public void Checkout(String branch)
     {
+        using var span = Tracer?.NewSpan(nameof(Checkout), branch);
+
         // 切换分支
-        ShellExecute("git", $"checkout {branch}", Path);
+        ShellExecute("git", $"checkout {branch}", Path, 60_000);
     }
 
     public void Pull(String remote, String branch)
     {
+        using var span = Tracer?.NewSpan(nameof(Pull), new { remote, branch });
+
         // 拉取远程库
         ShellExecute("git", $"pull -v {remote} {branch}", Path);
     }
@@ -87,6 +93,8 @@ public class GitRepo
 
     public void Push(String remote, String branch)
     {
+        using var span = Tracer?.NewSpan(nameof(Push), new { remote, branch });
+
         // 推送远程库
         ShellExecute("git", $"push -v {remote} {branch}", Path);
     }
@@ -130,7 +138,7 @@ public class GitRepo
     #endregion
 
     #region 辅助
-    private String? Execute(String cmd, String? arguments = null, String? worker = null)
+    private String? Execute(String cmd, String? arguments = null, String? worker = null, Int32 msTimeout = 3_000)
     {
         using var span = Tracer?.NewSpan("Execute", $"{cmd} {arguments} worker={worker}");
         try
@@ -150,9 +158,9 @@ public class GitRepo
             var process = Process.Start(psi);
             if (process == null) return null;
 
-            if (!process.WaitForExit(3_000))
+            if (!process.WaitForExit(msTimeout))
             {
-                process.Kill();
+                process.Kill(true);
                 return null;
             }
 
@@ -165,7 +173,7 @@ public class GitRepo
         }
     }
 
-    private Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null)
+    private Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null, Int32 msTimeout = 30_000)
     {
         using var span = Tracer?.NewSpan("ShellExecute", $"{cmd} {arguments} worker={worker}");
         try
@@ -189,9 +197,9 @@ public class GitRepo
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            if (!process.WaitForExit(30_000))
+            if (!process.WaitForExit(msTimeout))
             {
-                process.Kill();
+                process.Kill(true);
                 return process.ExitCode;
             }
 

@@ -85,7 +85,7 @@ public class Worker //: BackgroundService
         else
             gr.Branchs = branchs;
 
-        WriteLog("分支：{0}", branchs.ToJson());
+        WriteLog("所有分支：{0}", branchs.ToJson());
 
         // 本地所有远程库
         var remotes = repo.Remotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -94,7 +94,7 @@ public class Worker //: BackgroundService
         else
             gr.Remotes = remotes;
 
-        WriteLog("远程：{0}", remotes.ToJson());
+        WriteLog("所有远程：{0}", remotes.ToJson());
 
         if (branchs == null || branchs.Length == 0)
         {
@@ -110,6 +110,9 @@ public class Worker //: BackgroundService
             var currentBranch = gr.CurrentBranch ?? branchs[0];
             foreach (var item in branchs)
             {
+                using var span2 = _tracer?.NewSpan($"ProcessBranch-{item}", repo);
+                WriteLog("分支：{0}", path);
+
                 // 切换分支
                 gr.Checkout(item);
                 gr.PullAll(item);
@@ -160,6 +163,8 @@ public class Worker //: BackgroundService
     private static Boolean _check;
     void Update(Repo repo, GitRepo gr, String path, SyncSetting set)
     {
+        using var span = _tracer?.NewSpan("NugetUpgrade", path);
+
         if (!_check)
         {
             CheckTool();
