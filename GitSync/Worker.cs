@@ -177,7 +177,7 @@ public class Worker //: BackgroundService
         if (slns.Count > 1) sln = slns[0].Name;
 
         // 更新Nuget包
-        var timeout = 60_000;
+        var timeout = 300_000;
         //"dotnet-outdated".Run("-u", 30_000, null, null, path);
         switch (repo.UpdateMode)
         {
