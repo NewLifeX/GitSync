@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using GitSync.Models;
 using NewLife.Remoting.Clients;
 using NewLife.Serialization;
@@ -236,13 +237,13 @@ public class Worker //: BackgroundService
 
     void CheckTool()
     {
-        var rs = "dotnet".Execute("tool list -g", 30_000);
+        var rs = "dotnet".Execute("tool list -g", 30_000, true, Encoding.UTF8);
 
         var ss = rs?.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
         var line = ss?.FirstOrDefault(e => e.StartsWith("dotnet-outdated-tool"));
         if (line.IsNullOrEmpty())
         {
-            rs = "dotnet".Execute("tool install dotnet-outdated-tool -g");
+            rs = "dotnet".Execute("tool install dotnet-outdated-tool -g", 30_000, true, Encoding.UTF8);
             WriteLog(rs);
         }
     }
