@@ -47,13 +47,20 @@ public class Worker //: BackgroundService
             return;
         }
 
-        var ms = set.Repos;
+        var ms = set.Repos?.Where(e => e.Enable).ToArray();
         if (ms != null && ms.Length > 0)
         {
-            foreach (var item in ms)
+            //foreach (var item in ms)
+            //{
+            //    if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
+            //}
+            Parallel.ForEach(ms, item =>
             {
-                if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
-            }
+                lock (item.Name)
+                {
+                    ProcessRepo(set.BaseDirectory, item, set);
+                }
+            });
         }
 
         await Task.Delay(2_000, stoppingToken);
