@@ -242,17 +242,17 @@ public class Worker //: BackgroundService
         if (changes.Count == 0) return;
 
         // 编译
-        var rs = "dotnet".Run("build", timeout, null, null, path);
+        var exitCode = "dotnet".Run("build", timeout, null, null, path);
 
         // Git提交。编译成功才提交，否则回滚
-        if (rs == 0)
+        if (exitCode == 0)
         {
             WriteLog("{0}编译成功，提交", repo.Name);
             "git".Run("commit -a -m \"Upgrade Nuget\"", 15_000, null, null, path);
         }
         else
         {
-            WriteLog("{0}编译失败，回滚", repo.Name);
+            WriteLog("{0}编译失败（ExitCode={1}），回滚", repo.Name, exitCode);
             "git".Run("reset --hard", 15_000, null, null, path);
         }
     }
