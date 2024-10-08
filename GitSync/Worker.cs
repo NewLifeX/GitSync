@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net.NetworkInformation;
 using System.Text;
 using GitSync.Models;
 using NewLife.Remoting.Clients;
@@ -50,6 +51,14 @@ public class Worker //: BackgroundService
         var ms = set.Repos?.Where(e => e.Enable).ToArray();
         if (ms != null && ms.Length > 0)
         {
+            // 等待网络
+            for (var i = 0; i < 300; i++)
+            {
+                if (NetworkInterface.GetIsNetworkAvailable()) break;
+
+                Thread.Sleep(1000);
+            }
+
             //foreach (var item in ms)
             //{
             //    if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
@@ -237,9 +246,15 @@ public class Worker //: BackgroundService
 
         // Git提交。编译成功才提交，否则回滚
         if (rs == 0)
+        {
+            WriteLog("{0}编译成功，提交", repo.Name);
             "git".Run("commit -a -m \"Upgrade Nuget\"", 15_000, null, null, path);
+        }
         else
+        {
+            WriteLog("{0}编译失败，回滚", repo.Name);
             "git".Run("reset --hard", 15_000, null, null, path);
+        }
     }
 
     void CheckTool()
