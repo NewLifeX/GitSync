@@ -89,6 +89,10 @@ public class Worker //: BackgroundService
         using var span = _tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
         WriteLog("同步：{0}", path);
 
+        // 如果有旧的.git/index.lock锁定文件，删除之
+        var file = path.CombinePath(".git/index.lock");
+        if (File.Exists(file)) File.Delete(file);
+
         var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
         gr.GetBranchs();
 
