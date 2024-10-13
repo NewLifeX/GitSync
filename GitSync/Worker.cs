@@ -59,17 +59,17 @@ public class Worker //: BackgroundService
                 Thread.Sleep(1000);
             }
 
-            //foreach (var item in ms)
-            //{
-            //    if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
-            //}
-            Parallel.ForEach(ms, item =>
+            foreach (var item in ms)
             {
-                lock (item.Name)
-                {
-                    ProcessRepo(set.BaseDirectory, item, set);
-                }
-            });
+                if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
+            }
+            //Parallel.ForEach(ms, item =>
+            //{
+            //    lock (item.Name)
+            //    {
+            //        ProcessRepo(set.BaseDirectory, item, set);
+            //    }
+            //});
         }
 
         await Task.Delay(2_000, stoppingToken);
