@@ -276,6 +276,8 @@ public class Worker //: BackgroundService
 
     private void WriteLog(String format, params Object[] args)
     {
+        if (format.IsNullOrEmpty()) return;
+
         XTrace.WriteLine(format, args);
         _eventProvider?.WriteInfoEvent("Worker", String.Format(format, args));
     }
