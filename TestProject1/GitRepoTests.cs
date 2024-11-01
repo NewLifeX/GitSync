@@ -7,7 +7,7 @@ public class GitRepoTests
     GitRepo _gitRepo;
     public GitRepoTests()
     {
-        _gitRepo = new GitRepo { Name = "Core", Path = "D:\\X\\NewLife.Core" };
+        _gitRepo = new GitRepo { Name = "Core", Path = "D:\\X\\NewLife.Map" };
     }
 
     [Fact]

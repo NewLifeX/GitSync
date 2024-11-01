@@ -96,9 +96,9 @@ public class Worker //: BackgroundService
         var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
         gr.GetBranchs();
 
-        // 如果本地有未提交文件，则跳过处理
-        var changes = gr.GetChanges();
-        if (changes.Count > 0) return false;
+        //// 如果本地有未提交文件，则跳过处理
+        //var changes = gr.GetChanges();
+        //if (changes.Count > 0) return false;
 
         // 本地所有分支
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -130,6 +130,13 @@ public class Worker //: BackgroundService
         {
             // 记住当前分支，最后要切回来
             var currentBranch = gr.CurrentBranch ?? branchs[0];
+            // 当前分支必须在第一位，避免有些修改被切到其它分支上
+            if (!currentBranch.IsNullOrEmpty() && branchs.Length > 0 && currentBranch != branchs[0])
+            {
+                var bs = branchs.ToList();
+                if (bs.Contains(currentBranch)) bs.Remove(currentBranch);
+                bs.Insert(0, currentBranch);
+            }
             foreach (var item in branchs)
             {
                 using var span2 = _tracer?.NewSpan($"ProcessBranch-{item}", repo);
@@ -143,6 +150,10 @@ public class Worker //: BackgroundService
                     Update(repo, gr, path, set);
 
                 gr.PushAll(item);
+
+                // 如果本地有未提交文件，则跳过处理
+                var changes = gr.GetChanges();
+                if (changes.Count > 0) break;
             }
 
             gr.Checkout(currentBranch);
@@ -241,9 +252,9 @@ public class Worker //: BackgroundService
                 break;
         }
 
-        // 是否有文件更新
-        var changes = gr.GetChanges();
-        if (changes.Count == 0) return;
+        //// 是否有文件更新
+        //var changes = gr.GetChanges();
+        //if (changes.Count == 0) return;
 
         // 编译
         var exitCode = "dotnet".Run("build", timeout, null, null, path);
