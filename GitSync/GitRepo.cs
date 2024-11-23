@@ -25,7 +25,7 @@ public class GitRepo
     public String[] GetBranchs()
     {
         // 执行git branch命令，获得本地所有分支
-        var rs = Execute("git", "branch", Path);
+        var rs = "git".Execute("branch", Path);
         if (rs.IsNullOrEmpty()) return [];
 
         var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim()).ToArray();
@@ -49,7 +49,7 @@ public class GitRepo
     public String[] GetRemotes()
     {
         // 执行git branch命令，获得本地所有分支
-        var rs = Execute("git", "branch -r", Path);
+        var rs = "git".Execute("branch -r", Path);
         if (rs.IsNullOrEmpty()) return [];
 
         var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries);
@@ -68,7 +68,7 @@ public class GitRepo
         using var span = Tracer?.NewSpan(nameof(Checkout), branch);
 
         // 切换分支
-        ShellExecute("git", $"checkout {branch}", Path, 60_000);
+        "git".ShellExecute($"checkout {branch}", Path, 60_000);
     }
 
     public void Pull(String remote, String branch)
@@ -76,13 +76,13 @@ public class GitRepo
         using var span = Tracer?.NewSpan(nameof(Pull), new { remote, branch });
 
         // 拉取远程库
-        ShellExecute("git", $"pull -v {remote} {branch}", Path);
+        "git".ShellExecute($"pull -v {remote} {branch}", Path, 60_000);
     }
 
     public void PullAll(String branch)
     {
         // 拉取远程库
-        //ShellExecute("git", $"pull -v --all", Path);
+        //"git".ShellExecute($"pull -v --all", Path);
 
         var rs = Remotes ?? GetRemotes();
         foreach (var remote in rs)
@@ -96,13 +96,13 @@ public class GitRepo
         using var span = Tracer?.NewSpan(nameof(Push), new { remote, branch });
 
         // 推送远程库
-        ShellExecute("git", $"push -v {remote} {branch}", Path);
+        "git".ShellExecute($"push -v {remote} {branch}", Path, 60_000);
     }
 
     public void PushAll(String branch)
     {
         // 推送远程库
-        //ShellExecute("git", $"push -v --all", Path);
+        //"git".ShellExecute($"push -v --all", Path);
 
         var rs = Remotes ?? GetRemotes();
         foreach (var remote in rs)
@@ -115,7 +115,7 @@ public class GitRepo
     {
         var dic = new Dictionary<String, String>();
 
-        var rs = Execute("git", "status -s", Path);
+        var rs = "git".Execute("status -s", Path);
         if (rs.IsNullOrEmpty()) return dic;
 
         var ss = rs.Split("\n", StringSplitOptions.RemoveEmptyEntries);
@@ -138,79 +138,5 @@ public class GitRepo
     #endregion
 
     #region 辅助
-    private String? Execute(String cmd, String? arguments = null, String? worker = null, Int32 msTimeout = 3_000)
-    {
-        using var span = Tracer?.NewSpan("Execute", $"{cmd} {arguments} worker={worker}");
-        try
-        {
-            XTrace.WriteLine("{0} {1}", cmd, arguments);
-
-            var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
-            {
-                // UseShellExecute 必须 false，以便于后续重定向输出流
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                //RedirectStandardError = true,
-                WorkingDirectory = worker,
-            };
-            var process = Process.Start(psi);
-            if (process == null) return null;
-
-            if (!process.WaitForExit(msTimeout))
-            {
-                process.Kill(true);
-                return null;
-            }
-
-            return process.StandardOutput.ReadToEnd();
-        }
-        catch (Exception ex)
-        {
-            span?.SetError(ex, null);
-            return null;
-        }
-    }
-
-    private Int32 ShellExecute(String cmd, String? arguments = null, String? worker = null, Int32 msTimeout = 30_000)
-    {
-        using var span = Tracer?.NewSpan("ShellExecute", $"{cmd} {arguments} worker={worker}");
-        try
-        {
-            XTrace.WriteLine("{0} {1}", cmd, arguments);
-
-            var psi = new ProcessStartInfo(cmd, arguments ?? String.Empty)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                //WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = worker,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
-            var process = new Process { StartInfo = psi };
-            process.OutputDataReceived += (s, e) => XTrace.WriteLine(e.Data);
-            process.ErrorDataReceived += (s, e) => XTrace.WriteLine(e.Data);
-            process.Start();
-            //if (process == null) return -1;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            if (!process.WaitForExit(msTimeout))
-            {
-                process.Kill(true);
-                return process.ExitCode;
-            }
-
-            return process.ExitCode;
-        }
-        catch (Exception ex)
-        {
-            span?.SetError(ex, null);
-            XTrace.Log.Error(ex.Message);
-            return -2;
-        }
-    }
     #endregion
 }

@@ -210,7 +210,7 @@ public class Worker //: BackgroundService
         if (slns.Count > 1) sln = slns[0].Name;
 
         // 更新Nuget包
-        var timeout = 300_000;
+        var timeout = 30_000;
         //"dotnet-outdated".Run("-u", 30_000, null, null, path);
         switch (repo.UpdateMode)
         {
@@ -222,7 +222,7 @@ public class Worker //: BackgroundService
                 var excludes = (set.Excludes + "").Split(",", StringSplitOptions.RemoveEmptyEntries);
                 if (excludes != null && excludes.Length > 0)
                 {
-                    var result = "dotnet-outdated".Run($"-pre Never {sln}", timeout, null, null, path);
+                    var result = "dotnet-outdated".Run($"-pre Never {sln}", path, timeout);
                     var lines = (result + "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
                     foreach (var item in lines)
                     {
@@ -238,15 +238,15 @@ public class Worker //: BackgroundService
                     }
                 }
                 if (pkgs.Count > 0)
-                    "dotnet-outdated".Run($"-u -pre Never {sln} " + pkgs.Join(" ", e => $"-exc {e}"), timeout, null, null, path);
+                    "dotnet-outdated".Run($"-u -pre Never {sln} " + pkgs.Join(" ", e => $"-exc {e}"), path, timeout);
                 else
-                    "dotnet-outdated".Run($"-u -pre Never {sln}", timeout, null, null, path);
+                    "dotnet-outdated".Run($"-u -pre Never {sln}", path, timeout);
                 break;
             case UpdateModes.Default:
-                "dotnet-outdated".Run($"-u -pre Never {sln}", timeout, null, null, path);
+                "dotnet-outdated".Run($"-u -pre Never {sln}", path, timeout);
                 break;
             case UpdateModes.Full:
-                "dotnet-outdated".Run($"-u {sln}", timeout, null, null, path);
+                "dotnet-outdated".Run($"-u {sln}", path, timeout);
                 break;
             default:
                 break;
@@ -257,18 +257,19 @@ public class Worker //: BackgroundService
         //if (changes.Count == 0) return;
 
         // 编译
-        var exitCode = "dotnet".Run("build", timeout, null, null, path);
+        var exitCode = "dotnet".Run("build", path, timeout);
 
         // Git提交。编译成功才提交，否则回滚
+        timeout = 15_000;
         if (exitCode == 0)
         {
             WriteLog("{0}编译成功，提交", repo.Name);
-            "git".Run("commit -a -m \"Upgrade Nuget\"", 15_000, null, null, path);
+            "git".Run("commit -a -m \"Upgrade Nuget\"", path, timeout);
         }
         else
         {
             WriteLog("{0}编译失败（ExitCode={1}），回滚", repo.Name, exitCode);
-            "git".Run("reset --hard", 15_000, null, null, path);
+            "git".Run("reset --hard", path, timeout);
         }
     }
 
