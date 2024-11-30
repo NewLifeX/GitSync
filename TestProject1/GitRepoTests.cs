@@ -4,7 +4,7 @@ namespace TestProject1;
 
 public class GitRepoTests
 {
-    GitRepo _gitRepo;
+    private GitRepo _gitRepo;
     public GitRepoTests()
     {
         _gitRepo = new GitRepo { Name = "Core", Path = "D:\\X\\NewLife.Map" };

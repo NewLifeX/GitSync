@@ -14,7 +14,7 @@ namespace GitSync;
 public class Worker //: BackgroundService
 {
     private readonly IHost _host;
-    private IEventProvider _eventProvider;
+    private readonly IEventProvider _eventProvider;
     private readonly ITracer _tracer;
 
     /// <summary>
@@ -134,7 +134,7 @@ public class Worker //: BackgroundService
             if (!currentBranch.IsNullOrEmpty() && branchs.Length > 0 && currentBranch != branchs[0])
             {
                 var bs = branchs.ToList();
-                if (bs.Contains(currentBranch)) bs.Remove(currentBranch);
+                bs.Remove(currentBranch);
                 bs.Insert(0, currentBranch);
             }
             foreach (var item in branchs)
