@@ -1,8 +1,9 @@
-﻿using NewLife.Agent;
-using NewLife.Model;
+﻿using Microsoft.Win32.TaskScheduler;
+using NewLife.Agent;
 using NewLife.Remoting.Clients;
 using NewLife.Threading;
 using Stardust;
+using Task = System.Threading.Tasks.Task;
 
 namespace GitSync;
 
@@ -125,6 +126,53 @@ internal class MyService : ServiceBase
         WriteLog("同步完成！");
 
         CheckTimer();
+
+        //// 如果是Windows系统，设置睡眠自动唤醒任务
+        //if (Runtime.Windows && _timer != null && _timer.Crons != null)
+        //{
+        //    var now = DateTime.Now;
+        //    var nextTime = _timer.Crons.Min(e => e.GetNext(now));
+        //    if (nextTime.Year > 2000) CreateWakeUpTask(nextTime);
+        //}
+    }
+
+    public void CreateWakeUpTask(DateTime nextTime)
+    {
+        var asm = AssemblyX.Entry;
+        var name = asm.Name + "2";
+        var path = $"\\{name}";
+
+        using var ts = new TaskService();
+        //var ss = ts.FindAllTasks(name: null, true);
+        var task = ts.GetTask(path);
+        if (task != null)
+        {
+            if (task.Enabled) return;
+
+            // 删除已有任务
+            ts.RootFolder.DeleteTask(name);
+        }
+
+        var td = ts.NewTask();
+        td.RegistrationInfo.Description = asm.Description;
+
+        // 设置触发器，例如每天早上7点
+        //td.Triggers.Add(new DailyTrigger { StartBoundary = DateTime.Today.AddHours(7) });
+        td.Triggers.Add(new TimeTrigger(nextTime));
+
+        // 设置操作，可以是一个简单的命令行
+        td.Actions.Add(new ExecAction("ping", "newlifex.com", null));
+
+        // 设置唤醒计算机选项
+        td.Settings.WakeToRun = true;
+        td.Settings.DisallowStartIfOnBatteries = true;
+        td.Settings.StopIfGoingOnBatteries = true;
+        td.Settings.MultipleInstances = TaskInstancesPolicy.IgnoreNew;
+        td.Settings.StartWhenAvailable = true;
+        td.Settings.RunOnlyIfNetworkAvailable = true;
+
+        // 注册任务
+        ts.RootFolder.RegisterTaskDefinition(path, td);
     }
     #endregion
 }
