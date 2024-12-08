@@ -48,28 +48,38 @@ public class Worker //: BackgroundService
             return;
         }
 
-        var ms = set.Repos?.Where(e => e.Enable).ToArray();
-        if (ms != null && ms.Length > 0)
+        // 阻止系统进入睡眠状态
+        SystemSleep.Prevent(false);
+        try
         {
-            // 等待网络
-            for (var i = 0; i < 300; i++)
+            var ms = set.Repos?.Where(e => e.Enable).ToArray();
+            if (ms != null && ms.Length > 0)
             {
-                if (NetworkInterface.GetIsNetworkAvailable()) break;
+                // 等待网络
+                for (var i = 0; i < 300; i++)
+                {
+                    if (NetworkInterface.GetIsNetworkAvailable()) break;
 
-                Thread.Sleep(1000);
-            }
+                    Thread.Sleep(1000);
+                }
 
-            foreach (var item in ms)
-            {
-                if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
+                foreach (var item in ms)
+                {
+                    if (item.Enable) ProcessRepo(set.BaseDirectory, item, set);
+                }
+                //Parallel.ForEach(ms, item =>
+                //{
+                //    lock (item.Name)
+                //    {
+                //        ProcessRepo(set.BaseDirectory, item, set);
+                //    }
+                //});
             }
-            //Parallel.ForEach(ms, item =>
-            //{
-            //    lock (item.Name)
-            //    {
-            //        ProcessRepo(set.BaseDirectory, item, set);
-            //    }
-            //});
+        }
+        finally
+        {
+            // 恢复系统睡眠状态
+            SystemSleep.Restore();
         }
 
         await Task.Delay(2_000, stoppingToken);
