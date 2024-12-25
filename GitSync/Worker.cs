@@ -172,7 +172,7 @@ public class Worker //: BackgroundService
         return true;
     }
 
-    void AddAll(String basePath, SyncSetting set)
+    public void AddAll(String basePath, SyncSetting set)
     {
         using var span = _tracer?.NewSpan("AddAll", basePath);
 

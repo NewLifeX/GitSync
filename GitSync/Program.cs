@@ -19,7 +19,21 @@ if (set.IsNew)
     set.Save();
 }
 
-new MyService { ServiceProvider = services.BuildServiceProvider() }.Main(args);
+services.AddSingleton<Worker>();
+var provider = services.BuildServiceProvider();
+var host = services.BuildHost();
+
+// 支持命令 AddAll {path} ，扫描指定目录并添加所有仓库
+//var args = Environment.GetCommandLineArgs();
+var idx = Array.IndexOf(args, "AddAll");
+if (idx >= 0 && args.Length > idx + 1)
+{
+    var wrk = provider.GetService<Worker>();
+    wrk.AddAll(args[idx + 1], set);
+    return;
+}
+
+new MyService { ServiceProvider = provider }.Main(args);
 
 //// 注册后台任务 IHostedService
 //services.AddHostedService<Worker>();
