@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyTitle>Git代码库同步</AssemblyTitle>
     <Description>Git代码库同步，保持本地代码库到多个远程库之间的同步</Description>
     <Company>新生命开发团队</Company>
@@ -18,6 +18,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="MyService.cs" />
+  </ItemGroup>
   <ItemGroup>
     <Using Include="NewLife" />
     <Using Include="NewLife.Log" />
@@ -25,10 +29,8 @@
     <Using Include="NewLife.Reflection" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NewLife.Agent" Version="10.10.2024.1202" />
     <PackageReference Include="NewLife.Core" Version="11.1.2024.1206" />
-    <PackageReference Include="NewLife.Stardust" Version="3.2.2024.1203" />
-    <PackageReference Include="TaskScheduler" Version="2.11.0" />
+    <PackageReference Include="NewLife.Stardust" Version="3.2.2024.1211" />
   </ItemGroup>
 
 </Project>
