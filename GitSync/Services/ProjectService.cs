@@ -55,7 +55,7 @@ internal class ProjectService
             if (txt != txt2)
             {
                 WriteLog("[{0}] 更新", item.Name);
-                File.WriteAllText(item.FullName, txt2, Encoding.UTF8);
+                File.WriteAllText(item.FullName, txt2);
             }
         }
     }
