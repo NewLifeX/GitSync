@@ -106,12 +106,9 @@ internal class GitService
         {
             gr.PullAll(null);
 
-            if (repo.UpdateMode > 0)
-            {
-                project.UpdateReadme(repo, gr, path, set);
-                project.UpdateVersion(repo, gr, path, set);
-                //nuget.Update(repo, gr, path, set);
-            }
+            project.UpdateReadme(repo, gr, path, set);
+            project.UpdateVersion(repo, gr, path, set);
+            if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
             gr.PushAll(null);
         }
@@ -135,11 +132,11 @@ internal class GitService
                 gr.Checkout(item);
                 gr.PullAll(item);
 
-                if (repo.UpdateMode > 0 && item == currentBranch)
+                if (item == currentBranch)
                 {
                     project.UpdateReadme(repo, gr, path, set);
                     project.UpdateVersion(repo, gr, path, set);
-                    //nuget.Update(repo, gr, path, set);
+                    if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
                 }
 
                 gr.PushAll(item);
