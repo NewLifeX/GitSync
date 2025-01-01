@@ -1,4 +1,5 @@
 ﻿using GitSync;
+using GitSync.Services;
 using Stardust;
 
 //!!! 轻量级控制台项目模板
@@ -18,6 +19,9 @@ if (set.IsNew)
     set.Crons = "0 0 * * * ?";
     set.Save();
 }
+
+services.AddScoped<NugetService>();
+services.AddScoped<ProjectService>();
 
 // 注册后台任务 IHostedService
 services.AddHostedService<Worker>();
