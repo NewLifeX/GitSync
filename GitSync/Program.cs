@@ -20,6 +20,8 @@ if (set.IsNew)
     set.Save();
 }
 
+// 注册服务
+services.AddScoped<GitService>();
 services.AddScoped<NugetService>();
 services.AddScoped<ProjectService>();
 
@@ -33,8 +35,8 @@ var provider = services.BuildServiceProvider();
 var idx = Array.IndexOf(args, "AddAll");
 if (idx >= 0 && args.Length > idx + 1)
 {
-    var wrk = provider.GetService<Worker>();
-    wrk.AddAll(args[idx + 1], set);
+    var git = provider.GetService<GitService>();
+    git.AddAll(args[idx + 1], set);
     return;
 }
 
