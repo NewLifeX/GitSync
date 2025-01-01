@@ -29,7 +29,7 @@
     <Using Include="NewLife.Reflection" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NewLife.Core" Version="11.1.2024.1206" />
+    <PackageReference Include="NewLife.Core" Version="11.3.2025.101" />
     <PackageReference Include="NewLife.Stardust" Version="3.2.2024.1211" />
   </ItemGroup>
 
