@@ -101,11 +101,17 @@ internal class GitService
         WriteLog("所有远程：{0}", remotes.ToJson());
 
         var nuget = serviceProvider.GetRequiredService<NugetService>();
+        var project = serviceProvider.GetRequiredService<ProjectService>();
         if (branchs == null || branchs.Length == 0)
         {
             gr.PullAll(null);
 
-            if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
+            if (repo.UpdateMode > 0)
+            {
+                project.UpdateReadme(repo, gr, path, set);
+                project.UpdateVersion(repo, gr, path, set);
+                //nuget.Update(repo, gr, path, set);
+            }
 
             gr.PushAll(null);
         }
@@ -131,7 +137,9 @@ internal class GitService
 
                 if (repo.UpdateMode > 0 && item == currentBranch)
                 {
-                    nuget.Update(repo, gr, path, set);
+                    project.UpdateReadme(repo, gr, path, set);
+                    project.UpdateVersion(repo, gr, path, set);
+                    //nuget.Update(repo, gr, path, set);
                 }
 
                 gr.PushAll(item);

@@ -1,6 +1,8 @@
 ﻿using GitSync;
 using GitSync.Services;
+using NewLife.Remoting.Clients;
 using Stardust;
+using Stardust.Registry;
 
 //!!! 轻量级控制台项目模板
 
@@ -12,6 +14,7 @@ XTrace.UseConsole();
 // 初始化对象容器，提供注入能力
 var services = ObjectContainer.Current;
 services.AddStardust();
+services.AddSingleton(p => p.GetService<IRegistry>() as IEventProvider);
 
 var set = SyncSetting.Current;
 if (set.IsNew)

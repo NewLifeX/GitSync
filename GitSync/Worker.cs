@@ -58,6 +58,7 @@ public class Worker : IHostedService
             }
         }
 
+        // 注册命令。星尘平台应用在线页面，可以给该应用发送test命令
         var factory = _serviceProvider.GetService<StarFactory>();
         if (factory != null && factory.App != null)
         {

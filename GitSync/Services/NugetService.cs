@@ -7,7 +7,7 @@ namespace GitSync.Services;
 
 internal class NugetService
 {
-    private static Boolean _check;
+    private Boolean _check;
     private readonly IEventProvider _eventProvider;
     private readonly ITracer _tracer;
 
