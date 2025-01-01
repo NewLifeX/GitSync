@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 using GitSync.Models;
 using NewLife.Remoting.Clients;
 using static System.Net.Mime.MediaTypeNames;
@@ -54,7 +55,7 @@ internal class ProjectService
             if (txt != txt2)
             {
                 WriteLog("[{0}] 更新", item.Name);
-                File.WriteAllText(item.FullName, txt2);
+                File.WriteAllText(item.FullName, txt2, Encoding.UTF8);
             }
         }
     }
@@ -124,11 +125,12 @@ internal class ProjectService
             if (match == null) continue;
 
             var copyRight2 = copyRight.Replace(match.Value, DateTime.Now.Year + "");
+            if (copyRight == copyRight2) continue;
 
             WriteLog("[{0}] {1} => {2}", item.Name, copyRight, copyRight2);
 
             txt = txt.Replace(copyRight, copyRight2);
-            File.WriteAllText(item.FullName, txt);
+            File.WriteAllText(item.FullName, txt, Encoding.UTF8);
         }
     }
 
