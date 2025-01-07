@@ -126,7 +126,7 @@ internal class GitService
             foreach (var item in branchs)
             {
                 using var span2 = _tracer?.NewSpan($"ProcessBranch-{item}", repo);
-                WriteLog("分支：{0}", path);
+                WriteLog("分支：{0}", item);
 
                 // 切换分支
                 gr.Checkout(item);
