@@ -188,6 +188,12 @@ internal class GitService
         if (format.IsNullOrEmpty()) return;
 
         XTrace.WriteLine(format, args);
-        _eventProvider?.WriteInfoEvent("Worker", String.Format(format, args));
+        if (_eventProvider != null && !format.IsNullOrEmpty())
+        {
+            if (format.Contains("错误") || format.Contains("异常"))
+                _eventProvider.WriteErrorEvent(GetType().Name, String.Format(format, args));
+            else
+                _eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
+        }
     }
 }
