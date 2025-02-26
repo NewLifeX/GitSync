@@ -110,7 +110,13 @@ public class Worker : IHostedService
         // 如果配置未变化，则不处理。首次_lastCrons为空
         var set = SyncSetting.Current;
         var crons = set.Crons + "";
-        if (crons == _lastCrons) return;
+        if (crons == _lastCrons)
+        {
+            var time = _timer.Crons.Min(e => e.GetNext(DateTime.Now));
+            XTrace.WriteLine("下次执行时间：{0}", time);
+            return;
+        }
+
         _lastCrons = crons;
 
         // 配置变化，重新加载定时器

@@ -22,6 +22,8 @@ internal class GitService
         var set = SyncSetting.Current;
         //XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
 
+        using var span = _tracer?.NewSpan(nameof(SyncRepos));
+
         // 阻止系统进入睡眠状态
         SystemSleep.Prevent(false);
         try
@@ -37,6 +39,7 @@ internal class GitService
                         var ping = new Ping();
                         var rs = ping.Send("www.baidu.com");
                         if (rs.Status == IPStatus.Success) break;
+                        span?.AppendTag(rs.Status + "");
                     }
 
                     Thread.Sleep(1000);
@@ -54,6 +57,10 @@ internal class GitService
                 //    }
                 //});
             }
+        }
+        catch (Exception ex)
+        {
+            span?.SetError(ex, null);
         }
         finally
         {
