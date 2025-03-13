@@ -25,6 +25,7 @@ internal class GitService
         using var span = _tracer?.NewSpan(nameof(SyncRepos));
 
         // 阻止系统进入睡眠状态
+        WriteLog("阻止系统进入睡眠状态");
         SystemSleep.Prevent(false);
         try
         {
@@ -65,6 +66,7 @@ internal class GitService
         finally
         {
             // 恢复系统睡眠状态
+            WriteLog("恢复系统睡眠状态");
             SystemSleep.Restore();
         }
     }

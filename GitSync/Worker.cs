@@ -148,6 +148,8 @@ public class Worker : IHostedService
         //var worker = ServiceProvider.CreateInstance(typeof(Worker)) as Worker;
         //await ExecuteAsync(default);
 
+        WriteLog("开始同步！");
+
         using var scope = _serviceProvider.CreateScope();
         var provider = scope.ServiceProvider;
         var gitService = provider.GetService<GitService>();
