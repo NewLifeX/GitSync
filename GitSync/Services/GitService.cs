@@ -11,9 +11,9 @@ internal class GitService
     private readonly IEventProvider _eventProvider;
     private readonly ITracer _tracer;
 
-    public GitService(IEventProvider eventProvider, ITracer tracer)
+    public GitService(IServiceProvider serviceProvider, ITracer tracer)
     {
-        _eventProvider = eventProvider;
+        _eventProvider = serviceProvider.GetService<IEventProvider>();
         _tracer = tracer;
     }
 
