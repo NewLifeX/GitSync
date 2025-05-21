@@ -100,26 +100,46 @@ internal class GitService
 
         WriteLog("所有分支：{0}", branchs.ToJson());
 
-        // 本地所有远程库
-        var remotes = repo.Remotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
-        if (remotes == null || remotes.Length == 0 || remotes[0] == "*")
-            remotes = gr.GetRemotes();
-        else
-            gr.Remotes = remotes;
+        // 处理远程仓库配置
+        String pullRemote = null;
+        String[] pushRemotes = null;
 
-        WriteLog("所有远程：{0}", remotes.ToJson());
+        // 优先使用新的配置方式
+        if (!repo.PullRemote.IsNullOrEmpty() && !repo.PushRemotes.IsNullOrEmpty())
+        {
+            pullRemote = repo.PullRemote;
+            pushRemotes = repo.PushRemotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
+        }
+        else
+        {
+            // 兼容旧配置
+            var remotes = repo.Remotes.Split(",", StringSplitOptions.RemoveEmptyEntries);
+            if (remotes == null || remotes.Length == 0 || remotes[0] == "*")
+                remotes = gr.GetRemotes();
+            else
+                gr.Remotes = remotes;
+            
+            pullRemote = remotes[0];
+            pushRemotes = remotes;
+        }
+
+        WriteLog("拉取远程：{0}", pullRemote);
+        WriteLog("推送远程：{0}", pushRemotes.ToJson());
 
         var nuget = serviceProvider.GetRequiredService<NugetService>();
         var project = serviceProvider.GetRequiredService<ProjectService>();
         if (branchs == null || branchs.Length == 0)
         {
-            gr.PullAll(null);
+            gr.PullAll(pullRemote);
 
             project.UpdateReadme(repo, gr, path, set);
             project.UpdateVersion(repo, gr, path, set);
             if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
-            gr.PushAll(null);
+            foreach (var remote in pushRemotes)
+            {
+                gr.PushAll(remote);
+            }
         }
         else
         {
@@ -139,7 +159,7 @@ internal class GitService
 
                 // 切换分支
                 gr.Checkout(item);
-                gr.PullAll(item);
+                gr.PullAll(pullRemote);
 
                 if (item == currentBranch)
                 {
@@ -148,7 +168,10 @@ internal class GitService
                     if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
                 }
 
-                gr.PushAll(item);
+                foreach (var remote in pushRemotes)
+                {
+                    gr.PushAll(remote);
+                }
 
                 // 如果本地有未提交文件，则跳过处理
                 var changes = gr.GetChanges();

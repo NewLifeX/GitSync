@@ -25,6 +25,14 @@ public class Repo
     [XmlAttribute]
     public String Remotes { get; set; }
 
+    /// <summary>拉取远程</summary>
+    [XmlAttribute] 
+    public String PullRemote { get; set; }
+
+    /// <summary>推送远程列表</summary>
+    [XmlAttribute]
+    public String PushRemotes { get; set; }
+
     ///// <summary>更新Nuget包</summary>
     //[XmlAttribute]
     //public Boolean Upgrade { get; set; }

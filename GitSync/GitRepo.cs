@@ -79,15 +79,20 @@ public class GitRepo
         "git".ShellExecute($"pull -v {remote} {branch}", Path, 60_000);
     }
 
-    public void PullAll(String branch)
+    public void PullAll(String remote)
     {
-        // 拉取远程库
-        //"git".ShellExecute($"pull -v --all", Path);
-
-        var rs = Remotes ?? GetRemotes();
-        foreach (var remote in rs)
+        // 如果指定了远程仓库，只从该远程仓库拉取
+        if (!remote.IsNullOrEmpty())
         {
-            Pull(remote, branch);
+            Pull(remote, null);
+            return;
+        }
+
+        // 兼容旧版本：从所有远程仓库拉取
+        var rs = Remotes ?? GetRemotes();
+        foreach (var r in rs)
+        {
+            Pull(r, null);
         }
     }
 
@@ -99,15 +104,20 @@ public class GitRepo
         "git".ShellExecute($"push -v {remote} {branch}", Path, 60_000);
     }
 
-    public void PushAll(String branch)
+    public void PushAll(String remote)
     {
-        // 推送远程库
-        //"git".ShellExecute($"push -v --all", Path);
-
-        var rs = Remotes ?? GetRemotes();
-        foreach (var remote in rs)
+        // 如果指定了远程仓库，只推送到该远程仓库
+        if (!remote.IsNullOrEmpty())
         {
-            Push(remote, branch);
+            Push(remote, null);
+            return;
+        }
+
+        // 兼容旧版本：推送到所有远程仓库
+        var rs = Remotes ?? GetRemotes();
+        foreach (var r in rs)
+        {
+            Push(r, null);
         }
     }
 

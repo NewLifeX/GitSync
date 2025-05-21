@@ -35,8 +35,8 @@ public class SyncSetting : Config<SyncSetting>
         {
             Repos =
             [
-                new Repo { Name = "test", Branchs = "dev,master", Remotes = "origin,github" },
-                new Repo { Name = "test2", Branchs = "dev,master", Remotes = "origin,github" },
+                new Repo { Name = "test", Branchs = "dev,master", Remotes = "origin,github",PullRemote="origin",PushRemotes="github"},
+                new Repo { Name = "test2", Branchs = "dev,master", Remotes = "origin,github",PullRemote="origin",PushRemotes="github"  },
             ];
         }
 
