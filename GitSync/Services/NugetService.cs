@@ -8,12 +8,12 @@ namespace GitSync.Services;
 internal class NugetService
 {
     private Boolean _check;
-    private readonly IEventProvider _eventProvider;
+    //private readonly IEventProvider _eventProvider;
     private readonly ITracer _tracer;
 
-    public NugetService(IEventProvider eventProvider, ITracer tracer)
+    public NugetService(/*IEventProvider eventProvider,*/ ITracer tracer)
     {
-        _eventProvider = eventProvider;
+        //_eventProvider = eventProvider;
         _tracer = tracer;
     }
 
@@ -114,12 +114,12 @@ internal class NugetService
         if (format.IsNullOrEmpty()) return;
 
         XTrace.WriteLine(format, args);
-        if (_eventProvider != null && !format.IsNullOrEmpty())
-        {
-            if (format.Contains("错误") || format.Contains("异常"))
-                _eventProvider.WriteErrorEvent(GetType().Name, String.Format(format, args));
-            else
-                _eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
-        }
+        //if (_eventProvider != null && !format.IsNullOrEmpty())
+        //{
+        //    if (format.Contains("错误") || format.Contains("异常"))
+        //        _eventProvider.WriteErrorEvent(GetType().Name, String.Format(format, args));
+        //    else
+        //        _eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
+        //}
     }
 }
