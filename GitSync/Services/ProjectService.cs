@@ -2,23 +2,15 @@
 using System.Text.RegularExpressions;
 using GitSync.Models;
 using NewLife.Remoting.Clients;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace GitSync.Services;
 
 /// <summary>更新项目</summary>
-internal class ProjectService
+public class ProjectService(IEventProvider eventProvider, ITracer tracer)
 {
-    private readonly IEventProvider _eventProvider;
-    private readonly ITracer _tracer;
     private String _projects;
     private String _teamInfo;
-
-    public ProjectService(IEventProvider eventProvider, ITracer tracer)
-    {
-        _eventProvider = eventProvider;
-        _tracer = tracer;
-    }
+    private String _dotnetActions;
 
     public void UpdateReadme(Repo repo, GitRepo gr, String path, SyncSetting set)
     {
@@ -35,7 +27,7 @@ internal class ProjectService
 
         if (_projects.IsNullOrEmpty() && _teamInfo.IsNullOrEmpty()) return;
 
-        using var span = _tracer?.NewSpan(nameof(UpdateReadme), path, mds.Length);
+        using var span = tracer?.NewSpan(nameof(UpdateReadme), path, mds.Length);
         foreach (var item in mds)
         {
             var txt = File.ReadAllText(item.FullName);
@@ -103,7 +95,7 @@ internal class ProjectService
         var prjs = path.AsDirectory().GetFiles("*.csproj", SearchOption.AllDirectories);
         if (prjs.Length == 0) return;
 
-        using var span = _tracer?.NewSpan(nameof(UpdateVersion), path, prjs.Length);
+        using var span = tracer?.NewSpan(nameof(UpdateVersion), path, prjs.Length);
 
         // 读取每一个项目文件，识别其中版权信息，然后更新文件
         foreach (var item in prjs)
@@ -134,17 +126,97 @@ internal class ProjectService
         }
     }
 
+    public void UpdateWorkflow(Repo repo, String path)
+    {
+        var files = path.AsDirectory().GetFiles("*.yml", SearchOption.AllDirectories);
+        if (files.Length == 0) return;
+
+        // 以NewLife.Core作为模板
+        if (repo.Name == "NewLife.Core")
+        {
+            var publish = files.FirstOrDefault(e => e.Name == "publish.yml");
+            if (publish != null)
+            {
+                var ts = ParseYml(File.ReadAllText(publish.FullName), 20);
+                _dotnetActions = ts?.Text;
+            }
+        }
+
+        if (_dotnetActions.IsNullOrEmpty()) return;
+
+        using var span = tracer?.NewSpan(nameof(UpdateWorkflow), path, files.Length);
+
+        // 读取每一个项目文件，识别其中版权信息，然后更新文件
+        foreach (var item in files)
+        {
+            var txt = File.ReadAllText(item.FullName);
+            if (txt.IsNullOrEmpty()) continue;
+
+            var txt2 = txt;
+            var ts = ParseYml(txt, 20);
+            if (ts != null)
+            {
+                txt2 = txt2.Replace(ts.Text, _dotnetActions);
+            }
+
+            if (txt != txt2)
+            {
+                WriteLog("[{0}] 更新", item.Name);
+                File.WriteAllText(item.FullName, txt2);
+            }
+        }
+    }
+
+    TextSegment ParseYml(String txt, Int32 minLength)
+    {
+        //var pStart = 0;
+        //var pEnd = 0;
+        //var tab = 0;
+        //var lines = txt.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        //for (var i = 0; i < lines.Length; i++)
+        //{
+        //    // 找到包含actions/setup-dotnet的行，并且下一行包含with，那么这一行作为pStart
+        //    if (lines[i].Contains("actions/setup-dotnet") && i + 1 < lines.Length && lines[i + 1].Trim().StartsWith("with:"))
+        //    {
+        //        pStart = i;
+        //        tab = lines[i + 1].IndexOf("with:");
+        //    }
+        //    else if (pStart > 0)
+        //    {
+        //        // 找到下一行不以tab开始的行，那么这一行作为pEnd
+        //        if (lines[i].Length < tab || !lines[i].StartsWith(new String(' ', tab)))
+        //        {
+        //            pEnd = i;
+        //            break;
+        //        }
+        //    }
+        //}
+
+        var p1 = txt.IndexOf("actions/checkout");
+        if (p1 >= 0)
+        {
+            p1 += "actions/checkout".Length;
+            var p2 = txt.IndexOf("- name:", p1 + minLength);
+            if (p2 >= 0)
+            {
+                return new TextSegment { Text = txt[p1..p2], Start = p1, End = p2 };
+            }
+        }
+
+        return null;
+    }
+
     private void WriteLog(String format, params Object[] args)
     {
         if (format.IsNullOrEmpty()) return;
 
         XTrace.WriteLine(format, args);
-        if (_eventProvider != null && !format.IsNullOrEmpty())
+        if (eventProvider != null && !format.IsNullOrEmpty())
         {
             if (format.Contains("错误") || format.Contains("异常"))
-                _eventProvider.WriteErrorEvent(GetType().Name, String.Format(format, args));
+                eventProvider.WriteErrorEvent(GetType().Name, String.Format(format, args));
             else
-                _eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
+                eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
         }
     }
 }
