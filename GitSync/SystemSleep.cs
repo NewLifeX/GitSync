@@ -2,13 +2,13 @@
 
 namespace GitSync;
 
-internal class SystemSleep
+internal partial class SystemSleep
 {
     /// <summary>使应用程序能够通知系统它正在使用中，从而防止系统在应用程序运行时进入睡眠状态或关闭显示器。</summary>
     /// <param name="esFlags"></param>
     /// <returns></returns>
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    private static extern UInt32 SetThreadExecutionState(ExecutionState esFlags);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    private static partial UInt32 SetThreadExecutionState(ExecutionState esFlags);
 
     /// <summary>
     /// 设置此线程此时开始一直将处于运行状态，此时计算机不应该进入睡眠状态。
@@ -29,10 +29,7 @@ internal class SystemSleep
     /// <summary>
     /// 恢复此线程的运行状态，操作系统现在可以正常进入睡眠状态和关闭屏幕。
     /// </summary>
-    public static void Restore()
-    {
-        SetThreadExecutionState(ExecutionState.Continuous);
-    }
+    public static void Restore() => SetThreadExecutionState(ExecutionState.Continuous);
 
     /// <summary>
     /// 重置系统睡眠或者关闭屏幕的计时器，这样系统睡眠或者屏幕能够继续持续工作设定的超时时间。

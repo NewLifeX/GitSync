@@ -5,24 +5,16 @@ using NewLife.Serialization;
 
 namespace GitSync.Services;
 
-internal class GitService
+internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
 {
-    private static Boolean _check;
-    private readonly IEventProvider _eventProvider;
-    private readonly ITracer _tracer;
-
-    public GitService(IServiceProvider serviceProvider, ITracer tracer)
-    {
-        _eventProvider = serviceProvider.GetService<IEventProvider>();
-        _tracer = tracer;
-    }
+    private readonly IEventProvider _eventProvider = serviceProvider.GetService<IEventProvider>();
 
     public void SyncRepos(IServiceProvider serviceProvider)
     {
         var set = SyncSetting.Current;
         //XTrace.WriteLine("同步配置：{0}", set.ToJson(true));
 
-        using var span = _tracer?.NewSpan(nameof(SyncRepos));
+        using var span = tracer?.NewSpan(nameof(SyncRepos));
 
         // 阻止系统进入睡眠状态
         WriteLog("阻止系统进入睡眠状态");
@@ -77,14 +69,14 @@ internal class GitService
         var path = !repo.Path.IsNullOrEmpty() ? repo.Path : basePath.CombinePath(repo.Name);
         if (path.IsNullOrEmpty()) return false;
 
-        using var span = _tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
+        using var span = tracer?.NewSpan($"ProcessRepo-{repo.Name}", repo);
         WriteLog("同步：{0}", path);
 
         // 如果有旧的.git/index.lock锁定文件，删除之
         var file = path.CombinePath(".git/index.lock");
         if (File.Exists(file)) File.Delete(file);
 
-        var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = _tracer };
+        var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = tracer };
         gr.GetBranchs();
 
         //// 如果本地有未提交文件，则跳过处理
@@ -134,7 +126,7 @@ internal class GitService
             }
             foreach (var item in branchs)
             {
-                using var span2 = _tracer?.NewSpan($"ProcessBranch-{item}", repo);
+                using var span2 = tracer?.NewSpan($"ProcessBranch-{item}", repo);
                 WriteLog("分支：{0}", item);
 
                 // 切换分支
@@ -163,7 +155,7 @@ internal class GitService
 
     public void AddAll(String basePath, SyncSetting set)
     {
-        using var span = _tracer?.NewSpan("AddAll", basePath);
+        using var span = tracer?.NewSpan("AddAll", basePath);
 
         //XTrace.WriteLine("basePath: {0}", basePath);
         var di = basePath.AsDirectory();

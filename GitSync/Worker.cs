@@ -10,23 +10,12 @@ namespace GitSync;
 /// <summary>
 /// 后台任务。支持构造函数注入服务
 /// </summary>
-public class Worker : IHostedService
+/// <remarks>
+/// 后台任务。支持构造函数注入服务
+/// </remarks>
+public class Worker(IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly IHost _host;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IEventProvider _eventProvider;
-    private readonly ITracer _tracer;
-
-    /// <summary>
-    /// 后台任务。支持构造函数注入服务
-    /// </summary>
-    public Worker(IHost host, IServiceProvider serviceProvider, ITracer tracer)
-    {
-        _host = host;
-        _serviceProvider = serviceProvider;
-        _eventProvider = serviceProvider.GetService<IRegistry>() as IEventProvider;
-        _tracer = tracer;
-    }
+    private readonly IEventProvider _eventProvider = serviceProvider.GetService<IRegistry>() as IEventProvider;
 
     static Worker()
     {
@@ -59,7 +48,7 @@ public class Worker : IHostedService
         }
 
         // 注册命令。星尘平台应用在线页面，可以给该应用发送test命令
-        var factory = _serviceProvider.GetService<StarFactory>();
+        var factory = serviceProvider.GetService<StarFactory>();
         if (factory != null && factory.App != null)
         {
             factory.App.RegisterCommand("test", Test);
@@ -90,11 +79,7 @@ public class Worker : IHostedService
             var repo = set.Repos.FirstOrDefault(e => e.Name.EqualIgnoreCase(arg));
             if (repo == null) return "未找到仓库" + arg;
 
-            //var tracer = ServiceProvider.GetService<ITracer>();
-            //var worker = new Worker(null, ServiceProvider, tracer);
-            //var worker = ServiceProvider.CreateInstance(typeof(Worker)) as Worker;
-
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var provider = scope.ServiceProvider;
             var gitService = provider.GetService<GitService>();
 
@@ -126,14 +111,9 @@ public class Worker : IHostedService
 
         var next = DateTime.MaxValue;
         if (!crons.IsNullOrEmpty())
-        {
             _timer = new TimerX(DoWork, null, crons) { Async = true };
-
-        }
         else
-        {
             _timer = new TimerX(DoWork, null, 1000, 3600_000) { Async = true };
-        }
 
         XTrace.WriteLine("下次执行时间：{0}", _timer.NextTime);
     }
@@ -141,16 +121,9 @@ public class Worker : IHostedService
     private TimerX _timer;
     private void DoWork(Object state)
     {
-        //XTrace.WriteLine("DoWork");
-
-        //var tracer = ServiceProvider.GetService<ITracer>();
-        //var worker = new Worker(null, ServiceProvider, tracer);
-        //var worker = ServiceProvider.CreateInstance(typeof(Worker)) as Worker;
-        //await ExecuteAsync(default);
-
         WriteLog("开始同步！");
 
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         var provider = scope.ServiceProvider;
         var gitService = provider.GetService<GitService>();
 
@@ -163,14 +136,6 @@ public class Worker : IHostedService
         WriteLog("同步完成！");
 
         CheckTimer();
-
-        //// 如果是Windows系统，设置睡眠自动唤醒任务
-        //if (Runtime.Windows && _timer != null && _timer.Crons != null)
-        //{
-        //    var now = DateTime.Now;
-        //    var nextTime = _timer.Crons.Min(e => e.GetNext(now));
-        //    if (nextTime.Year > 2000) CreateWakeUpTask(nextTime);
-        //}
     }
 
     private void WriteLog(String format, params Object[] args)
