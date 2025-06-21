@@ -138,7 +138,8 @@ public class ProjectService(IEventProvider eventProvider, ITracer tracer)
             if (publish != null)
             {
                 var ts = ParseYml(File.ReadAllText(publish.FullName), 20);
-                _dotnetActions = ts?.Text;
+                if (ts != null && !ts.Text.IsNullOrEmpty() && ts.Text.Contains("actions/setup-dotnet"))
+                    _dotnetActions = ts?.Text;
             }
         }
 
@@ -151,6 +152,7 @@ public class ProjectService(IEventProvider eventProvider, ITracer tracer)
         {
             var txt = File.ReadAllText(item.FullName);
             if (txt.IsNullOrEmpty()) continue;
+            if (!txt.Contains("actions/setup-dotnet")) continue;
 
             var txt2 = txt;
             var ts = ParseYml(txt, 20);
