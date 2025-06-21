@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using GitSync.Models;
 
@@ -134,6 +135,11 @@ public class GitRepo
         }
 
         return dic;
+    }
+
+    public void CommitChanges(String comment)
+    {
+        "git".Run($"commit -a -m \"{comment}\"", Path);
     }
     #endregion
 

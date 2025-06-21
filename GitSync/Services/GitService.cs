@@ -109,6 +109,7 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
 
             project.UpdateReadme(repo, gr, path, set);
             project.UpdateVersion(repo, gr, path, set);
+            project.UpdateWorkflow(repo, path);
             if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
             gr.PushAll(null);
@@ -137,14 +138,25 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
                 {
                     project.UpdateReadme(repo, gr, path, set);
                     project.UpdateVersion(repo, gr, path, set);
+                    project.UpdateWorkflow(repo, path);
                     if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
+
+                    // 如果本地有未提交文件，则直接提交
+                    var changes = gr.GetChanges();
+                    if (changes.Count > 0)
+                    {
+                        WriteLog("分支 {0} 有未提交文件，直接提交", item);
+                        gr.CommitChanges($"[{repo.Name}] {item} 自动提交");
+                    }
                 }
 
                 gr.PushAll(item);
 
-                // 如果本地有未提交文件，则跳过处理
-                var changes = gr.GetChanges();
-                if (changes.Count > 0) break;
+                {
+                    // 如果本地有未提交文件，则跳过处理
+                    var changes = gr.GetChanges();
+                    if (changes.Count > 0) break;
+                }
             }
 
             gr.Checkout(currentBranch);
