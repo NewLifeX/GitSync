@@ -118,13 +118,15 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
         {
             // 记住当前分支，最后要切回来
             var currentBranch = gr.CurrentBranch ?? branchs[0];
-            // 当前分支必须在第一位，避免有些修改被切到其它分支上
-            if (!currentBranch.IsNullOrEmpty() && branchs.Length > 0 && currentBranch != branchs[0])
-            {
-                var bs = branchs.ToList();
-                bs.Remove(currentBranch);
-                bs.Insert(0, currentBranch);
-            }
+            //// 当前分支必须在第一位，避免有些修改被切到其它分支上
+            //if (!currentBranch.IsNullOrEmpty() && branchs.Length > 0 && currentBranch != branchs[0])
+            //{
+            //    var bs = branchs.ToList();
+            //    bs.Remove(currentBranch);
+            //    bs.Insert(0, currentBranch);
+            //}
+            // 只同步一个分支
+            branchs = [currentBranch];
             foreach (var item in branchs)
             {
                 using var span2 = tracer?.NewSpan($"ProcessBranch-{item}", repo);
