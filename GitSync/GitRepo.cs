@@ -1,9 +1,4 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Threading;
-using GitSync.Models;
-
-namespace GitSync;
+﻿namespace GitSync;
 
 /// <summary>Git库操作类</summary>
 public class GitRepo

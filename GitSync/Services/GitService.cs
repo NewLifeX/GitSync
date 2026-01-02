@@ -110,6 +110,7 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
             project.UpdateReadme(repo, gr, path, set);
             project.UpdateVersion(repo, gr, path, set);
             project.UpdateWorkflow(repo, path);
+            project.UpdateCopilotInstructions(repo, path);
             if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
             gr.PushAll(null);
@@ -141,6 +142,7 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
                     project.UpdateReadme(repo, gr, path, set);
                     project.UpdateVersion(repo, gr, path, set);
                     project.UpdateWorkflow(repo, path);
+                    project.UpdateCopilotInstructions(repo, path);
                     if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
                     // 如果本地有未提交文件，则直接提交

@@ -11,6 +11,7 @@ public class ProjectService(IEventProvider eventProvider, ITracer tracer)
     private String _projects;
     private String _teamInfo;
     private String _dotnetActions;
+    private String _copilotInstructions;
 
     public void UpdateReadme(Repo repo, GitRepo gr, String path, SyncSetting set)
     {
@@ -220,5 +221,30 @@ public class ProjectService(IEventProvider eventProvider, ITracer tracer)
             else
                 eventProvider.WriteInfoEvent(GetType().Name, String.Format(format, args));
         }
+    }
+
+    public void UpdateCopilotInstructions(Repo repo, String path)
+    {
+        var dir = ".github".GetFullPath();
+        if (!Directory.Exists(dir)) return;
+
+        var target = dir.CombinePath("copilot-instructions.md").GetFullPath();
+
+        // 以NewLife.Core作为模板
+        if (repo.Name == "NewLife.Core")
+        {
+            if (File.Exists(target))
+                _copilotInstructions = target;
+
+            return;
+        }
+
+        if (_copilotInstructions.IsNullOrEmpty()) return;
+
+        using var span = tracer?.NewSpan(nameof(UpdateCopilotInstructions), path);
+
+        File.Copy(_copilotInstructions, target, true);
+
+        WriteLog("[{0}] 更新 copilot-instructions.md", repo.Name);
     }
 }
