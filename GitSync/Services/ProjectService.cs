@@ -225,7 +225,7 @@ public class ProjectService(IEventProvider eventProvider, ITracer tracer)
 
     public void UpdateCopilotInstructions(Repo repo, String path)
     {
-        var dir = ".github".GetFullPath();
+        var dir = path.CombinePath(".github").GetFullPath();
         if (!Directory.Exists(dir)) return;
 
         var target = dir.CombinePath("copilot-instructions.md").GetFullPath();
