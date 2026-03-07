@@ -9,6 +9,8 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
 {
     private readonly IEventProvider _eventProvider = serviceProvider.GetService<IEventProvider>();
 
+    /// <summary>同步配置中所有启用的仓库，等待网络就绪后依次处理</summary>
+    /// <param name="serviceProvider">作用域服务提供者，用于解析 NugetService/ProjectService</param>
     public void SyncRepos(IServiceProvider serviceProvider)
     {
         var set = SyncSetting.Current;
@@ -63,6 +65,12 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
         }
     }
 
+    /// <summary>处理单个仓库的同步流程：拉取、更新项目文件、提交、推送</summary>
+    /// <param name="basePath">仓库基础目录，Repo.Path 为空时与 Repo.Name 拼合得到实际路径</param>
+    /// <param name="repo">仓库配置</param>
+    /// <param name="set">全局同步配置</param>
+    /// <param name="serviceProvider">作用域服务提供者</param>
+    /// <returns>处理成功返回 true；本地有未提交变更或路径为空返回 false</returns>
     public Boolean ProcessRepo(String basePath, Repo repo, SyncSetting set, IServiceProvider serviceProvider)
     {
         // 基础目录
@@ -169,6 +177,9 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
         return true;
     }
 
+    /// <summary>扫描指定目录下所有含 .git 子目录的仓库，追加到配置并保存</summary>
+    /// <param name="basePath">要扫描的根目录</param>
+    /// <param name="set">全局同步配置</param>
     public void AddAll(String basePath, SyncSetting set)
     {
         using var span = tracer?.NewSpan("AddAll", basePath);

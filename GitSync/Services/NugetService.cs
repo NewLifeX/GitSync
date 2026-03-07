@@ -29,7 +29,7 @@ internal class NugetService
 
         // 如果有多个解决方案，选择最大的那个
         var sln = "";
-        var slns = ".".AsDirectory().GetFiles("*.sln").OrderByDescending(e => e.Length).ToList();
+        var slns = path.AsDirectory().GetFiles("*.sln").OrderByDescending(e => e.Length).ToList();
         if (slns.Count > 1) sln = slns[0].Name;
 
         // 更新Nuget包

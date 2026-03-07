@@ -94,7 +94,7 @@ public class Worker(IServiceProvider serviceProvider) : IHostedService
         var crons = set.Crons + "";
         if (crons == _lastCrons)
         {
-            var time = _timer.Crons.Min(e => e.GetNext(DateTime.Now));
+            var time = _timer?.Crons.Min(e => e.GetNext(DateTime.Now));
             XTrace.WriteLine("下次执行时间：{0}", time);
             return;
         }
@@ -106,7 +106,6 @@ public class Worker(IServiceProvider serviceProvider) : IHostedService
 
         WriteLog("创建定时器：{0}", crons);
 
-        var next = DateTime.MaxValue;
         if (!crons.IsNullOrEmpty())
             _timer = new TimerX(DoWork, null, crons) { Async = true };
         else

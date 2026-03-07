@@ -52,6 +52,12 @@ internal static class ProcessHelper
         }
     }
 
+    /// <summary>以隐藏窗口执行命令行并捕获标准输出</summary>
+    /// <param name="cmd">可执行文件名</param>
+    /// <param name="arguments">命令参数</param>
+    /// <param name="working">工作目录</param>
+    /// <param name="msTimeout">最大等待毫秒数，超时后强制结束进程</param>
+    /// <returns>标准输出内容；超时或启动失败返回 null</returns>
     public static String? Execute(this String cmd, String? arguments = null, String? working = null, Int32 msTimeout = 3_000)
     {
         using var span = DefaultTracer.Instance?.NewSpan("Execute", $"{cmd} {arguments} working={working}");
@@ -89,6 +95,12 @@ internal static class ProcessHelper
         }
     }
 
+    /// <summary>以隐藏窗口执行命令行，将标准输出和标准错误异步转发到 XTrace 日志</summary>
+    /// <param name="cmd">可执行文件名</param>
+    /// <param name="arguments">命令参数</param>
+    /// <param name="working">工作目录</param>
+    /// <param name="msTimeout">最大等待毫秒数，超时后强制结束进程</param>
+    /// <returns>进程退出代码；超时返回进程最新退出代码，启动失败返回 -2</returns>
     public static Int32 ShellExecute(this String cmd, String? arguments = null, String? working = null, Int32 msTimeout = 30_000)
     {
         using var span = DefaultTracer.Instance?.NewSpan("ShellExecute", $"{cmd} {arguments} working={working}");

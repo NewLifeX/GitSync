@@ -2,6 +2,7 @@
 
 namespace GitSync.Models;
 
+/// <summary>Git 仓库同步配置项</summary>
 public class Repo
 {
     /// <summary>名字</summary>
