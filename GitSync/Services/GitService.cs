@@ -79,9 +79,9 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
         var gr = new GitRepo { Name = repo.Name, Path = path, Tracer = tracer };
         gr.GetBranchs();
 
-        //// 如果本地有未提交文件，则跳过处理
-        //var changes = gr.GetChanges();
-        //if (changes.Count > 0) return false;
+        // 如果本地有未提交文件，则跳过处理
+        var changes = gr.GetChanges();
+        if (changes.Count > 0) return false;
 
         // 本地所有分支
         var branchs = repo.Branchs.Split(",", StringSplitOptions.RemoveEmptyEntries);
@@ -146,7 +146,7 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
                     if (repo.UpdateMode > 0) nuget.Update(repo, gr, path, set);
 
                     // 如果本地有未提交文件，则直接提交
-                    var changes = gr.GetChanges();
+                    changes = gr.GetChanges();
                     if (changes.Count > 0)
                     {
                         WriteLog("分支 {0} 有未提交文件，直接提交", item);
@@ -158,7 +158,7 @@ internal class GitService(IServiceProvider serviceProvider, ITracer tracer)
 
                 {
                     // 如果本地有未提交文件，则跳过处理
-                    var changes = gr.GetChanges();
+                    changes = gr.GetChanges();
                     if (changes.Count > 0) break;
                 }
             }
