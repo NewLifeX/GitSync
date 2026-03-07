@@ -10,9 +10,6 @@ namespace GitSync;
 /// <summary>
 /// 后台任务。支持构造函数注入服务
 /// </summary>
-/// <remarks>
-/// 后台任务。支持构造函数注入服务
-/// </remarks>
 public class Worker(IServiceProvider serviceProvider) : IHostedService
 {
     private readonly IEventProvider _eventProvider = serviceProvider.GetService<IRegistry>() as IEventProvider;
